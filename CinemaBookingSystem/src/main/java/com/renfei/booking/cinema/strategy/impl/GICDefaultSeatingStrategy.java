@@ -1,7 +1,6 @@
 package com.renfei.booking.cinema.strategy.impl;
 
 import com.renfei.booking.cinema.strategy.SeatingStrategy;
-
 import java.util.ArrayList;
 import java.util.List;
 

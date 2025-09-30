@@ -91,8 +91,8 @@ public class CinemaBookingSystem {
       System.out.println("Enter number of tickets to book, or blank to go back:");
       System.out.print("> ");
       String input = scanner.nextLine().trim();
-      if (input.isEmpty()){
-          return -1;
+      if (input.isEmpty()) {
+        return -1;
       }
       try {
         int tickets = Integer.parseInt(input);
@@ -109,28 +109,28 @@ public class CinemaBookingSystem {
     }
   }
 
-    private void confirmBooking(Booking booking, int tickets) {
-        System.out.printf(
-                "Successfully reserved %d %s tickets.\nBooking id: %s\nSelected seats:\n%s",
-                tickets,
-                hall.getMovieTitle(),
-                booking.getBookingId(),
-                hall.displaySeatingMap(booking.getBookingId()));
+  private void confirmBooking(Booking booking, int tickets) {
+    System.out.printf(
+        "Successfully reserved %d %s tickets.\nBooking id: %s\nSelected seats:\n%s",
+        tickets,
+        hall.getMovieTitle(),
+        booking.getBookingId(),
+        hall.displaySeatingMap(booking.getBookingId()));
 
-        while (true) {
-            System.out.println("Enter blank to accept, or new seating position:");
-            System.out.print("> ");
-            String newPos = scanner.nextLine().trim();
-            if (newPos.isEmpty()) {
-                System.out.printf("Booking id: %s confirmed.\n", booking.getBookingId());
-                break;
-            }
-            booking = hall.reallocateSeats(booking, tickets, newPos);
-//            if (!hall.reallocateSeats(booking, tickets, newPos)) {
-//                System.out.println("Could not re-reserve seats. Please try again.");
-//            }
-        }
+    while (true) {
+      System.out.println("Enter blank to accept, or new seating position:");
+      System.out.print("> ");
+      String newPos = scanner.nextLine().trim();
+      if (newPos.isEmpty()) {
+        System.out.printf("Booking id: %s confirmed.\n", booking.getBookingId());
+        break;
+      }
+      booking = hall.reallocateSeats(booking, tickets, newPos);
+      //            if (!hall.reallocateSeats(booking, tickets, newPos)) {
+      //                System.out.println("Could not re-reserve seats. Please try again.");
+      //            }
     }
+  }
 
   private void handleCheckBookings() {
     System.out.println("Enter booking id, or blank to go back:");
@@ -151,7 +151,7 @@ public class CinemaBookingSystem {
     scanner.close();
   }
 
-//  public static void main(String[] args) {
-//    new CinemaBookingSystem().start();
-//  }
+  //  public static void main(String[] args) {
+  //    new CinemaBookingSystem().start();
+  //  }
 }

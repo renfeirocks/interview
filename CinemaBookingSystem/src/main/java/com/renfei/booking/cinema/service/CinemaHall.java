@@ -3,9 +3,11 @@ package com.renfei.booking.cinema.service;
 import com.renfei.booking.cinema.configuration.CinemaHallConfig;
 import com.renfei.booking.cinema.exception.BookingException;
 import com.renfei.booking.cinema.model.Booking;
+import com.renfei.booking.cinema.strategy.DefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
+import com.renfei.booking.cinema.strategy.impl.GICDefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
-import java.util.ArrayList;
+import com.renfei.booking.cinema.utility.SeatUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ public class CinemaHall {
   private final int totalRows;
   private final int seatsPerRow;
   private final AtomicInteger bookingCounter = new AtomicInteger(0);
+  private final DefaultPriorityStrategy defaultPriorityStrategy = new GICDefaultPriorityStrategy();
   private final int[] defaultColPriority;
 
   public CinemaHall(String movieTitle, int rows, int seatsPerRow) {
@@ -38,30 +41,7 @@ public class CinemaHall {
     this.totalRows = rows;
     this.seatsPerRow = seatsPerRow;
     this.seatingMap = new int[rows][seatsPerRow];
-    this.defaultColPriority = calculateDefaultColPriority(seatsPerRow);
-  }
-
-  // Time complexity: O(n) where n is the number of seats per row, linear time
-  private int[] calculateDefaultColPriority(int count) {
-    int centerLeft = (count - 1) / 2; // e.g., 10 -> 4, 9 -> 4
-    int centerRight = count / 2; // e.g., 10 -> 5, 9 -> 4
-
-    List<Integer> priority = new ArrayList<>();
-    if (count % 2 != 0) {
-      // Odd number of seats, start from the single center seat
-      priority.add(centerLeft);
-      for (int i = 1; i <= centerLeft; i++) {
-        priority.add(centerLeft - i); // Left outward
-        priority.add(centerRight + i); // Right outward
-      }
-    } else {
-      // Even number of seats, start from the two middle seats
-      for (int i = 0; i < count / 2; i++) {
-        priority.add(centerLeft - i); // Left outward
-        priority.add(centerRight + i); // Right outward
-      }
-    }
-    return priority.stream().mapToInt(i -> i).toArray();
+    this.defaultColPriority = defaultPriorityStrategy.calculateDefaultColPriority(seatsPerRow);
   }
 
   public String getMovieTitle() {
@@ -73,28 +53,6 @@ public class CinemaHall {
         IntStream.range(0, totalRows)
             .mapToLong(r -> IntStream.of(seatingMap[r]).filter(seat -> seat == 0).count())
             .sum();
-  }
-
-  private char rowIndexToLabel(int rowIndex) {
-    return (char) ('A' + rowIndex);
-  }
-
-  private int[] parseSeatPosition(String position) {
-    if (position == null || position.length() < 2 || position.length() > 3)
-      throw new BookingException("Invalid seat position format: " + position);
-    char rowLabel = Character.toUpperCase(position.charAt(0));
-    int rowIndex = rowLabel - 'A';
-    int colIndex;
-    try {
-      int colNumber = Integer.parseInt(position.substring(1));
-      colIndex = colNumber - 1;
-    } catch (NumberFormatException e) {
-      throw new BookingException("Invalid seat column number: " + position);
-    }
-    if (rowIndex >= 0 && rowIndex < totalRows && colIndex >= 0 && colIndex < seatsPerRow) {
-      return new int[] {rowIndex, colIndex};
-    }
-    throw new BookingException("Seat position out of bounds: " + position);
   }
 
   public Booking bookDefault(int numTickets) {
@@ -118,7 +76,7 @@ public class CinemaHall {
   }
 
   public Booking bookCustom(int numTickets, String startPosition) {
-    int[] start = parseSeatPosition(startPosition);
+    int[] start = SeatUtil.parseSeatPosition(startPosition, totalRows, seatsPerRow);
     if (start == null) {
       System.out.println("Invalid or out-of-bounds starting position: " + startPosition);
       return null;
@@ -178,7 +136,7 @@ public class CinemaHall {
     Map<String, List<int[]>> allBookedSeats = new HashMap<>();
     bookings.forEach((id, booking) -> allBookedSeats.put(id, booking.getSelectedSeats()));
     for (int r = totalRows - 1; r >= 0; r--) {
-      sb.append(rowIndexToLabel(r)).append(" ");
+      sb.append(SeatUtil.rowIndexToLabel(r)).append(" ");
       for (int c = 0; c < seatsPerRow; c++) {
         char symbol = '.';
         boolean isBooked = false;
