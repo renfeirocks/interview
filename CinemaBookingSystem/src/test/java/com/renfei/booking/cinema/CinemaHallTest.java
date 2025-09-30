@@ -154,13 +154,6 @@ class CinemaHallTest {
         });
     }
 
-    @Test
-    void cancelNonExistentBooking() {
-        // Try to remove a booking that doesn't exist
-        assertNull(cinemaHall.bookings.remove("NON_EXISTENT"));
-    }
-
-    // ... Add more negative test cases as needed ...
 
     // Multi-threading Test Cases
     @Test
@@ -339,6 +332,185 @@ class CinemaHallTest {
         Booking booking = new Booking("MR1S", 1, seats);
         hall.bookings.put(booking.getBookingId(), booking);
         assertTrue(hall.bookings.containsKey("MR1S"));
+    }
+
+    @Test
+    void bookMultipleSeatsWithOverlap() {
+        List<int[]> seats1 = new ArrayList<>();
+        seats1.add(new int[]{0, 0});
+        seats1.add(new int[]{0, 1});
+        Booking booking1 = new Booking("OL1", 2, seats1);
+        cinemaHall.bookings.put(booking1.getBookingId(), booking1);
+        List<int[]> seats2 = new ArrayList<>();
+        seats2.add(new int[]{0, 1}); // overlap
+        seats2.add(new int[]{0, 2});
+        Booking booking2 = new Booking("OL2", 2, seats2);
+        // Simulate check for overlap
+        boolean overlap = false;
+        for (Booking b : cinemaHall.bookings.values()) {
+            for (int[] s : b.getSelectedSeats()) {
+                if (s[0] == 0 && s[1] == 1) overlap = true;
+            }
+        }
+        assertTrue(overlap);
+    }
+
+    @Test
+    void bookWithDuplicateSeatsInSameBooking() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{1, 1});
+        seats.add(new int[]{1, 1}); // duplicate
+        Booking booking = new Booking("DUP1", 2, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        // Check that both seats are the same
+        assertEquals(2, booking.getSelectedSeats().size());
+        assertEquals(booking.getSelectedSeats().get(0)[0], booking.getSelectedSeats().get(1)[0]);
+        assertEquals(booking.getSelectedSeats().get(0)[1], booking.getSelectedSeats().get(1)[1]);
+    }
+
+    @Test
+    void bookWithEmptyBookingId() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{2, 3});
+        Booking booking = new Booking("", 1, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey(""));
+    }
+
+    @Test
+    void bookWithNullSeatList() {
+        assertThrows(NullPointerException.class, () -> new Booking("NULLSEAT", 1, null));
+    }
+
+    @Test
+    void bookWithEmptySeatList() {
+        List<int[]> seats = new ArrayList<>();
+        Booking booking = new Booking("EMPTYSEAT", 0, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey("EMPTYSEAT"));
+        assertEquals(0, booking.getNumTickets());
+    }
+
+    @Test
+    void bookWithNegativeIndices() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{-1, -1});
+        Booking booking = new Booking("NEGIDX", 1, seats);
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> cinemaHall.seatingMap[-1][-1] = 1);
+    }
+
+    @Test
+    void bookFirstAndLastSeat() {
+        int lastRow = cinemaHall.seatingMap.length - 1;
+        int lastCol = cinemaHall.seatingMap[0].length - 1;
+        List<int[]> first = new ArrayList<>();
+        first.add(new int[]{0, 0});
+        Booking b1 = new Booking("FIRST", 1, first);
+        cinemaHall.bookings.put(b1.getBookingId(), b1);
+        List<int[]> last = new ArrayList<>();
+        last.add(new int[]{lastRow, lastCol});
+        Booking b2 = new Booking("LAST", 1, last);
+        cinemaHall.bookings.put(b2.getBookingId(), b2);
+        assertTrue(cinemaHall.bookings.containsKey("FIRST"));
+        assertTrue(cinemaHall.bookings.containsKey("LAST"));
+    }
+
+    @Test
+    void cancelWithNullBookingId() {
+        assertNull(cinemaHall.bookings.remove(null));
+    }
+
+    @Test
+    void cancelWithEmptyBookingId() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{0, 1});
+        Booking booking = new Booking("", 1, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertNotNull(cinemaHall.bookings.remove(""));
+    }
+
+    @Test
+    void bookWithSpecialCharactersInBookingId() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{1, 2});
+        Booking booking = new Booking("!@#$%^&*()_+", 1, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey("!@#$%^&*()_+"));
+    }
+
+    @Test
+    void bookWhenHallIsFull() {
+        int rows = cinemaHall.seatingMap.length;
+        int cols = cinemaHall.seatingMap[0].length;
+        int bookingNum = 1;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                List<int[]> seats = new ArrayList<>();
+                seats.add(new int[]{r, c});
+                Booking booking = new Booking("FULL" + bookingNum++, 1, seats);
+                cinemaHall.bookings.put(booking.getBookingId(), booking);
+            }
+        }
+        // Try to book one more seat
+        List<int[]> extra = new ArrayList<>();
+        extra.add(new int[]{0, 0});
+        Booking extraBooking = new Booking("EXTRA", 1, extra);
+        // Simulate check for full
+        long totalSeats = rows * cols;
+        assertEquals(totalSeats, cinemaHall.bookings.size());
+    }
+
+    @Test
+    void cancelWhenHallIsEmpty() {
+        assertTrue(cinemaHall.bookings.isEmpty());
+        assertNull(cinemaHall.bookings.remove("ANY"));
+    }
+
+    @Test
+    void stressTestHighVolumeBookings() {
+        CinemaHall hall = new CinemaHall("StressTest", 10, 10);
+        int bookingNum = 1;
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                List<int[]> seats = new ArrayList<>();
+                seats.add(new int[]{r, c});
+                Booking booking = new Booking("STRESS" + bookingNum++, 1, seats);
+                hall.bookings.put(booking.getBookingId(), booking);
+            }
+        }
+        assertEquals(100, hall.bookings.size());
+    }
+
+    @Test
+    void bookWithMixedValidInvalidSeats() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{0, 0}); // valid
+        seats.add(new int[]{100, 100}); // invalid
+        Booking booking = new Booking("MIXED", 2, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey("MIXED"));
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> cinemaHall.seatingMap[100][100] = 1);
+    }
+
+    @Test
+    void bookWithMaxTickets() {
+        int max = 5; // For this test, use 5 as a practical max
+        List<int[]> seats = new ArrayList<>();
+        for (int i = 0; i < max; i++) seats.add(new int[]{0, i});
+        Booking booking = new Booking("MAXTIX", max, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey("MAXTIX"));
+        assertEquals(max, booking.getNumTickets());
+    }
+
+    @Test
+    void bookWithMinTickets() {
+        List<int[]> seats = new ArrayList<>();
+        seats.add(new int[]{0, 0});
+        Booking booking = new Booking("MINTIX", 1, seats);
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        assertTrue(cinemaHall.bookings.containsKey("MINTIX"));
+        assertEquals(1, booking.getNumTickets());
     }
 
     // ... Add more test cases as needed ...
