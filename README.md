@@ -67,3 +67,40 @@ This project is licensed under the MIT License.
 
 ## Contact
 For questions or support, please open an issue or contact the maintainer.
+
+# interview
+
+## Cinema Booking System Test Cases
+
+### Positive Test Cases
+- Book a seat for a valid movie, showtime, and seat.
+- Book multiple seats in a single transaction.
+- Cancel a previously booked seat.
+- View available seats for a showtime.
+- Book a seat after a cancellation (seat becomes available again).
+- Book seats for different movies and showtimes.
+- Apply a valid discount or promo code.
+- Book a seat using different payment methods.
+- Retrieve booking history for a user.
+- Book a seat at the last available slot.
+
+### Negative Test Cases
+- Book a seat that is already booked.
+- Book a seat for a non-existent movie or showtime.
+- Book a seat with invalid seat number or format.
+- Book a seat with invalid payment details.
+- Cancel a booking that does not exist.
+- Book more seats than available.
+- Book a seat with an expired promo code.
+- Book a seat with missing required fields.
+- Attempt to book a seat after the showtime has started.
+- Book a seat with insufficient account balance.
+
+### Multi-threading Test Cases
+- Simultaneously book the same seat from multiple threads (only one should succeed).
+- Simultaneously cancel the same booking from multiple threads (only one should succeed).
+- Simultaneously book different seats for the same showtime (all should succeed if available).
+- Simultaneously book seats for different showtimes (no cross-interference).
+- Simultaneously update seat availability and process bookings (ensure data consistency).
+- Simultaneously apply and remove promo codes during booking (ensure correct application).
+- Simultaneously retrieve available seats while bookings are being made (ensure accurate seat status).
