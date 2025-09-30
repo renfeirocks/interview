@@ -128,8 +128,10 @@ public class CinemaHall {
 
     // shifting the screen label to the center
     StringBuilder sb = new StringBuilder();
+    int seatSymbolWidth = 3; // " %2s"
+    int rowLabelWidth = 2;   // e.g., "A "
+    int totalWidth = seatsPerRow * seatSymbolWidth + rowLabelWidth;
     String screenLabel = "S C R E E N";
-    int totalWidth = seatsPerRow * 2;
     int padding = Math.max(0, (totalWidth - screenLabel.length()) / 2);
     sb.append(" ".repeat(padding)).append(screenLabel).append("\n");
     sb.append(" ".repeat(padding)).append("-".repeat(screenLabel.length())).append("\n");
@@ -160,13 +162,13 @@ public class CinemaHall {
             symbol = '#';
           }
         }
-        sb.append(symbol).append(" ");
+        sb.append(String.format(" %2s", symbol));
       }
       sb.append("\n");
     }
     sb.append("  ");
     for (int c = 1; c <= seatsPerRow; c++) {
-      sb.append(c % 10).append(" ");
+      sb.append(String.format(" %02d", c));
     }
     sb.append("\n");
     return sb.toString();

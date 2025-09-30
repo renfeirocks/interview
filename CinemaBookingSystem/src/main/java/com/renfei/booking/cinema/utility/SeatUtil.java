@@ -8,8 +8,7 @@ public class SeatUtil {
   }
 
   public static int[] parseSeatPosition(String position, int totalRows, int seatsPerRow) {
-    if (position == null || position.length() < 2 || position.length() > 3)
-      throw new BookingException("Invalid seat position format: " + position);
+    if (position == null || position.length() < 2 || position.length() > 3) return null;
     char rowLabel = Character.toUpperCase(position.charAt(0));
     int rowIndex = rowLabel - 'A';
     int colIndex;
@@ -17,11 +16,11 @@ public class SeatUtil {
       int colNumber = Integer.parseInt(position.substring(1));
       colIndex = colNumber - 1;
     } catch (NumberFormatException e) {
-      throw new BookingException("Invalid seat column number: " + position);
+      return null;
     }
     if (rowIndex >= 0 && rowIndex < totalRows && colIndex >= 0 && colIndex < seatsPerRow) {
       return new int[] {rowIndex, colIndex};
     }
-    throw new BookingException("Seat position out of bounds: " + position);
+    return null;
   }
 }
