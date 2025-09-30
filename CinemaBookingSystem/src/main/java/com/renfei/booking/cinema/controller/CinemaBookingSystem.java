@@ -1,14 +1,13 @@
-package com.renfei.booking.cinema.service;
+package com.renfei.booking.cinema.controller;
 
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.model.MovieInput;
-
-import java.util.List;
+import com.renfei.booking.cinema.service.CinemaHall;
 import java.util.Scanner;
 
 public class CinemaBookingSystem {
-  private CinemaHall hall;
   private final Scanner scanner = new Scanner(System.in);
+  private CinemaHall hall;
   private volatile boolean running = true;
 
   public void start() {
@@ -152,7 +151,7 @@ public class CinemaBookingSystem {
     scanner.close();
   }
 
-  public static void main(String[] args) {
-    new CinemaBookingSystem().start();
-  }
+//  public static void main(String[] args) {
+//    new CinemaBookingSystem().start();
+//  }
 }

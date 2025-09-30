@@ -1,8 +1,10 @@
 package com.renfei.booking.cinema.service;
 
 import com.renfei.booking.cinema.configuration.CinemaHallConfig;
+import com.renfei.booking.cinema.exception.BookingException;
 import com.renfei.booking.cinema.model.Booking;
-
+import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
+import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,12 +18,12 @@ import java.util.stream.IntStream;
  * ReentrantLock.
  */
 public class CinemaHall {
-  private final String movieTitle;
-  private final int totalRows;
-  private final int seatsPerRow;
   public final Map<String, Booking> bookings = new HashMap<>();
   public final int[][] seatingMap;
   public final ReentrantLock bookingLock = new ReentrantLock();
+  private final String movieTitle;
+  private final int totalRows;
+  private final int seatsPerRow;
   private final AtomicInteger bookingCounter = new AtomicInteger(0);
   private final int[] defaultColPriority;
 
@@ -29,7 +31,7 @@ public class CinemaHall {
     int maxRows = CinemaHallConfig.MAX_ROWS;
     int maxSeatsPerRow = CinemaHallConfig.MAX_SEATS_PER_ROW;
     if (rows > maxRows || seatsPerRow > maxSeatsPerRow) {
-      throw new IllegalArgumentException(
+      throw new BookingException(
           "Max rows is " + maxRows + ", max seats per row is " + maxSeatsPerRow + ".");
     }
     this.movieTitle = movieTitle;
@@ -78,7 +80,8 @@ public class CinemaHall {
   }
 
   private int[] parseSeatPosition(String position) {
-    if (position == null || position.length() < 2 || position.length() > 3) return null;
+    if (position == null || position.length() < 2 || position.length() > 3)
+      throw new BookingException("Invalid seat position format: " + position);
     char rowLabel = Character.toUpperCase(position.charAt(0));
     int rowIndex = rowLabel - 'A';
     int colIndex;
@@ -86,12 +89,12 @@ public class CinemaHall {
       int colNumber = Integer.parseInt(position.substring(1));
       colIndex = colNumber - 1;
     } catch (NumberFormatException e) {
-      return null;
+      throw new BookingException("Invalid seat column number: " + position);
     }
     if (rowIndex >= 0 && rowIndex < totalRows && colIndex >= 0 && colIndex < seatsPerRow) {
       return new int[] {rowIndex, colIndex};
     }
-    return null;
+    throw new BookingException("Seat position out of bounds: " + position);
   }
 
   public Booking bookDefault(int numTickets) {
@@ -100,15 +103,11 @@ public class CinemaHall {
       if (numTickets > getAvailableSeatsCount()) {
         return null;
       }
-      List<int[]> selectedSeats = new ArrayList<>();
-      for (int r = totalRows - 1; r >= 0 && selectedSeats.size() < numTickets; r--) {
-        for (int c : defaultColPriority) {
-          if (seatingMap[r][c] == 0) {
-            selectedSeats.add(new int[] {r, c});
-            if (selectedSeats.size() == numTickets) break;
-          }
-        }
-      }
+      List<int[]> selectedSeats =
+          new GICDefaultSeatingStrategy()
+              .selectSeats(
+                  seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority, null);
+
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(null, numTickets, selectedSeats);
       }
@@ -131,33 +130,15 @@ public class CinemaHall {
         return null;
       }
 
-      List<int[]> selectedSeats = new ArrayList<>();
-      int startRow = start[0];
-      int startCol = start[1];
-
-      // 1. Same row, rightward allocation
-      for (int c = startCol; c < seatsPerRow && selectedSeats.size() < numTickets; c++) {
-        if (seatingMap[startRow][c] == 0) {
-          selectedSeats.add(new int[] {startRow, c});
-        }
-      }
-
-      // 2. Overflow to next rows (closer to screen), using default rules
-      if (selectedSeats.size() < numTickets) {
-        int ticketsToAllocate = numTickets - selectedSeats.size();
-
-        // Row order: startRow-1 to 0 (rows closer to the screen)
-        // Use defaultColPriority for overflow
-        for (int r = startRow - 1; r >= 0 && ticketsToAllocate > 0; r--) {
-          for (int c : defaultColPriority) {
-            if (seatingMap[r][c] == 0) {
-              selectedSeats.add(new int[] {r, c});
-              ticketsToAllocate--;
-              if (ticketsToAllocate == 0) break;
-            }
-          }
-        }
-      }
+      List<int[]> selectedSeats =
+          new GICCustomSeatingStrategy()
+              .selectSeats(
+                  seatingMap,
+                  totalRows,
+                  seatsPerRow,
+                  numTickets,
+                  defaultColPriority,
+                  startPosition);
 
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(null, numTickets, selectedSeats);
