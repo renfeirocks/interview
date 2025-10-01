@@ -584,5 +584,29 @@ class CinemaHallTest {
         assertEquals(3, row1Count);
     }
 
+    @Test
+    void testBookFourCornerSeatsWhenOnlyCornersLeft() {
+        CinemaHall hall = new CinemaHall("Movie", 3, 3);
+        // Book all seats except corners
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 3; c++) {
+                if (!((r == 0 && c == 0) || (r == 0 && c == 2) || (r == 2 && c == 0) || (r == 2 && c == 2))) {
+                    hall.bookDefault(1);
+                }
+            }
+        }
+        Booking booking = hall.bookDefault(4);
+        List<int[]> seats = booking.getSelectedSeats();
+        assertEquals(4, seats.size());
+        boolean has00 = false, has02 = false, has20 = false, has22 = false;
+        for (int[] seat : seats) {
+            if (seat[0] == 0 && seat[1] == 0) has00 = true;
+            if (seat[0] == 0 && seat[1] == 2) has02 = true;
+            if (seat[0] == 2 && seat[1] == 0) has20 = true;
+            if (seat[0] == 2 && seat[1] == 2) has22 = true;
+        }
+        assertTrue(has00 && has02 && has20 && has22, "Should book all 4 corners");
+    }
+
     // ... Add more test cases as needed ...
 }
