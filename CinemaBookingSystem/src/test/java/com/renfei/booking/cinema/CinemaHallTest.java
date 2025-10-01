@@ -513,5 +513,66 @@ class CinemaHallTest {
         assertEquals(1, booking.getNumTickets());
     }
 
+    @Test
+    void testDefaultPriorityStrategy() {
+        CinemaHall hall = new CinemaHall("Movie", 3, 5);
+        // Book 3 tickets using default strategy
+        Booking booking = hall.bookDefault(3);
+        List<int[]> seats = booking.getSelectedSeats();
+        // Should select from row 0 (furthest from screen)
+        for (int[] seat : seats) {
+            assertEquals(0, seat[0]);
+        }
+    }
+
+    @Test
+    void testCustomSeatingStrategyFillRowAndOverflow() {
+        CinemaHall hall = new CinemaHall("Movie", 3, 5);
+        // Book 2 tickets using default strategy to occupy some seats first
+        Booking defaultBooking = hall.bookDefault(2);
+        List<int[]> defaultSeats = defaultBooking.getSelectedSeats();
+        // Book 4 tickets starting at B3 (row 1, col 2)
+        Booking booking = hall.bookCustom(defaultBooking,4, "B3");
+        List<int[]> seats = booking.getSelectedSeats();
+        // Should fill row 1 from col 2 to 4, then overflow to row 0
+        assertEquals(4, seats.size());
+        assertEquals(1, seats.get(0)[0]); assertEquals(2, seats.get(0)[1]);
+        assertEquals(1, seats.get(1)[0]); assertEquals(3, seats.get(1)[1]);
+        assertEquals(1, seats.get(2)[0]); assertEquals(4, seats.get(2)[1]);
+        // Overflow seat should be in row 0
+        assertEquals(0, seats.get(3)[0]);
+    }
+
+    @Test
+    void testCustomSeatingStrategyFillRowWithBookedSeats() {
+        CinemaHall hall = new CinemaHall("Movie", 3, 5);
+        // Book seat B4 (row 1, col 3) to simulate a booked seat
+        hall.seatingMap[1][3] = 1;
+        Booking booking = hall.bookCustom(3, "B3");
+        List<int[]> seats = booking.getSelectedSeats();
+        // Should skip B4 and fill B3, B5, then overflow to row 0
+        assertEquals(3, seats.size());
+        assertEquals(1, seats.get(0)[0]); assertEquals(2, seats.get(0)[1]);
+        assertEquals(1, seats.get(1)[0]); assertEquals(4, seats.get(1)[1]);
+        assertEquals(0, seats.get(2)[0]);
+    }
+
+    @Test
+    void testDefaultSeatingStrategy() {
+        CinemaHall hall = new CinemaHall("Movie", 2, 3);
+        // Book all seats
+        Booking booking = hall.bookDefault(6);
+        List<int[]> seats = booking.getSelectedSeats();
+        assertEquals(6, seats.size());
+        // Should fill row 0 first, then row 1
+        int row0Count = 0, row1Count = 0;
+        for (int[] seat : seats) {
+            if (seat[0] == 0) row0Count++;
+            if (seat[0] == 1) row1Count++;
+        }
+        assertEquals(3, row0Count);
+        assertEquals(3, row1Count);
+    }
+
     // ... Add more test cases as needed ...
 }
