@@ -5,7 +5,4 @@ public class BookingException extends RuntimeException {
     super(message);
   }
 
-  //    public BookingException(String message, Throwable cause) {
-  //        super(message, cause);
-  //    }
 }

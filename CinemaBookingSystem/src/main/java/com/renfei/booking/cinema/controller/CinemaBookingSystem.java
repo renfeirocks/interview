@@ -25,7 +25,7 @@ public class CinemaBookingSystem {
     }
   }
 
-  private boolean initializeSystem() {
+  boolean initializeSystem() {
     System.out.println(
         "Please define movie title and seating map in [Title] [Row] [SeatsPerRow] format:");
     System.out.print("> ");
@@ -62,7 +62,7 @@ public class CinemaBookingSystem {
         hall.getMovieTitle(), hall.getAvailableSeatsCount());
   }
 
-  private void handleMenuSelection(String selection) {
+  void handleMenuSelection(String selection) {
     switch (selection) {
       case "1":
         handleBookTickets();
@@ -149,7 +149,7 @@ public class CinemaBookingSystem {
     }
   }
 
-  private void handleExit() {
+  void handleExit() {
     System.out.println("Thank you for using GIC Cinemas system. Bye!");
     running = false;
     scanner.close();
