@@ -23,39 +23,39 @@ public class GICDefaultSeatingStrategy implements SeatingStrategy {
       }
     }
     // Special case: if only 4 seats are available and numTickets == 4, check for corners
-    int availableSeats = 0;
-    List<int[]> available = new ArrayList<>();
-    for (int r = 0; r < totalRows; r++) {
-      for (int c = 0; c < seatsPerRow; c++) {
-        if (seatingMap[r][c] == 0) {
-          availableSeats++;
-          available.add(new int[]{r, c});
-        }
-      }
-    }
-    if (numTickets == 4 && availableSeats == 4) {
-      boolean isCorners = true;
-      int[][] corners = new int[][]{
-        {0, 0}, {0, seatsPerRow-1}, {totalRows-1, 0}, {totalRows-1, seatsPerRow-1}
-      };
-      for (int[] seat : available) {
-        boolean found = false;
-        for (int[] corner : corners) {
-          if (seat[0] == corner[0] && seat[1] == corner[1]) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          isCorners = false;
-          break;
-        }
-      }
-      if (isCorners) {
-        selectedSeats.addAll(available);
-        return selectedSeats;
-      }
-    }
+//    int availableSeats = 0;
+//    List<int[]> available = new ArrayList<>();
+//    for (int r = 0; r < totalRows; r++) {
+//      for (int c = 0; c < seatsPerRow; c++) {
+//        if (seatingMap[r][c] == 0) {
+//          availableSeats++;
+//          available.add(new int[]{r, c});
+//        }
+//      }
+//    }
+//    if (numTickets == 4 && availableSeats == 4) {
+//      boolean isCorners = true;
+//      int[][] corners = new int[][]{
+//        {0, 0}, {0, seatsPerRow-1}, {totalRows-1, 0}, {totalRows-1, seatsPerRow-1}
+//      };
+//      for (int[] seat : available) {
+//        boolean found = false;
+//        for (int[] corner : corners) {
+//          if (seat[0] == corner[0] && seat[1] == corner[1]) {
+//            found = true;
+//            break;
+//          }
+//        }
+//        if (!found) {
+//          isCorners = false;
+//          break;
+//        }
+//      }
+//      if (isCorners) {
+//        selectedSeats.addAll(available);
+//        return selectedSeats;
+//      }
+//    }
     return selectedSeats;
   }
 }

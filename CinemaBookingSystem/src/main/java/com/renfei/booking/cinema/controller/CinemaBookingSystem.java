@@ -102,6 +102,8 @@ public class CinemaBookingSystem {
         int tickets = Integer.parseInt(input);
         if (tickets <= 0) {
           System.out.println("Please enter a positive number.");
+        } else if (hall.getAvailableSeatsCount() == 0){
+          System.out.println("Sorry, all tickets have been booked.");
         } else if (tickets > hall.getAvailableSeatsCount()) {
           System.out.printf("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
         } else {
