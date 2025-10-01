@@ -30,7 +30,7 @@ public class CinemaHall {
   private final DefaultPriorityStrategy defaultPriorityStrategy = new GICDefaultPriorityStrategy();
   private final int[] defaultColPriority;
 
-  public CinemaHall(String movieTitle, int rows, int seatsPerRow) {
+  public CinemaHall(String movieTitle, int rows, int seatsPerRow) throws BookingException {
     int maxRows = CinemaHallConfig.MAX_ROWS;
     int maxSeatsPerRow = CinemaHallConfig.MAX_SEATS_PER_ROW;
     int minRows = CinemaHallConfig.MIN_ROWS;
@@ -83,7 +83,7 @@ public class CinemaHall {
     }
   }
 
-  public Booking bookCustom(int numTickets, String startPosition) {
+  public Booking bookCustom(Booking booking, int numTickets, String startPosition) {
     int[] start = SeatUtil.parseSeatPosition(startPosition, totalRows, seatsPerRow);
     if (start == null) {
       System.out.println("Invalid or out-of-bounds starting position: " + startPosition);
@@ -107,7 +107,7 @@ public class CinemaHall {
                   startPosition);
 
       if (selectedSeats.size() == numTickets) {
-        return finalizeBooking(null, numTickets, selectedSeats);
+        return finalizeBooking(booking.getBookingId(), numTickets, selectedSeats);
       }
       return null; // Failed to find contiguous seats/overflow
     } finally {
@@ -198,7 +198,7 @@ public class CinemaHall {
         seatingMap[seat[0]][seat[1]] = 0;
       }
 
-      Booking tempBooking = bookCustom(tickets, newPos);
+      Booking tempBooking = bookCustom(booking, tickets, newPos);
       if (tempBooking != null) {
         Booking finalBooking =
             new Booking(booking.getBookingId(), tickets, tempBooking.getSelectedSeats());

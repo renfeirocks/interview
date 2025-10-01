@@ -40,9 +40,8 @@ public class GICCustomSeatingStrategy implements SeatingStrategy {
     // 2. Overflow to next rows (closer to screen), using default rules
     if (selectedSeats.size() < numTickets) {
       int ticketsToAllocate = numTickets - selectedSeats.size();
-      // Row order: startRow-1 to 0 (rows closer to the screen)
       // Use defaultColPriority for overflow
-      for (int r = startRow - 1; r >= 0 && ticketsToAllocate > 0; r--) {
+      for (int r = startRow + 1; r < totalRows && ticketsToAllocate > 0; r++) {
         for (int c : defaultColPriority) {
           if (seatingMap[r][c] == 0) {
             selectedSeats.add(new int[] {r, c});

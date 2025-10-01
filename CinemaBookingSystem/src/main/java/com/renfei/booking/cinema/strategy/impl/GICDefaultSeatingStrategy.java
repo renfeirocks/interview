@@ -14,7 +14,7 @@ public class GICDefaultSeatingStrategy implements SeatingStrategy {
       int[] defaultColPriority,
       String startPosition) {
     List<int[]> selectedSeats = new ArrayList<>();
-    for (int r = totalRows - 1; r >= 0 && selectedSeats.size() < numTickets; r--) {
+    for (int r = 0; r < totalRows && selectedSeats.size() < numTickets; r++) {
       for (int c : defaultColPriority) {
         if (seatingMap[r][c] == 0) {
           selectedSeats.add(new int[] {r, c});

@@ -1,5 +1,6 @@
 package com.renfei.booking.cinema.controller;
 
+import com.renfei.booking.cinema.exception.BookingException;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.model.MovieInput;
 import com.renfei.booking.cinema.service.CinemaHall;
@@ -11,13 +12,16 @@ public class CinemaBookingSystem {
   private volatile boolean running = true;
 
   public void start() {
-    if (!initializeSystem()) {
-      System.out.println("Failed to initialize system. Exiting.");
-      return;
+    while (!initializeSystem()) {
+      System.out.println("Failed to initialize system. Please try again.");
     }
     while (running) {
       displayMenu();
-      handleMenuSelection(scanner.nextLine().trim());
+      String selection = scanner.nextLine().trim();
+      handleMenuSelection(selection);
+      if (!running) {
+        break;
+      }
     }
   }
 
@@ -33,7 +37,7 @@ public class CinemaBookingSystem {
     try {
       hall = new CinemaHall(input.title, input.rows, input.seatsPerRow);
       return true;
-    } catch (IllegalArgumentException e) {
+    } catch (Exception e) {
       System.out.println("Error in dimensions: " + e.getMessage());
       return false;
     }
@@ -99,7 +103,7 @@ public class CinemaBookingSystem {
         if (tickets <= 0) {
           System.out.println("Please enter a positive number.");
         } else if (tickets > hall.getAvailableSeatsCount()) {
-          System.out.printf("Sorry, only %d seats available.\n", hall.getAvailableSeatsCount());
+          System.out.printf("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
         } else {
           return tickets;
         }
@@ -151,7 +155,4 @@ public class CinemaBookingSystem {
     scanner.close();
   }
 
-  //  public static void main(String[] args) {
-  //    new CinemaBookingSystem().start();
-  //  }
 }
