@@ -1,4 +1,4 @@
-package com.renfei.booking.cinema.utility;
+package com.renfei.booking.cinema.configuration;
 
 public class ErrorMessageConstants {
     public static final String INPUT_FORMAT_ERROR = "input_format_error";

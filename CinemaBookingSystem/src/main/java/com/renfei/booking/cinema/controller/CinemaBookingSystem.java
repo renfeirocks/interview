@@ -3,7 +3,7 @@ package com.renfei.booking.cinema.controller;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.model.MovieInput;
 import com.renfei.booking.cinema.service.CinemaHall;
-import com.renfei.booking.cinema.utility.ErrorMessageConstants;
+import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
 import com.renfei.booking.cinema.utility.ErrorMessageStore;
 
 import java.io.InputStream;

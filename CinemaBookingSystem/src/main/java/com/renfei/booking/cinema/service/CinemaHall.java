@@ -7,7 +7,7 @@ import com.renfei.booking.cinema.strategy.DefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
-import com.renfei.booking.cinema.utility.ErrorMessageConstants;
+import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
 import com.renfei.booking.cinema.utility.ErrorMessageStore;
 import com.renfei.booking.cinema.utility.SeatUtil;
 import java.util.HashMap;
@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
+
+import static com.renfei.booking.cinema.configuration.CinemaHallConfig.GIC_BOOKING_ID;
 
 /**
  * Manages the state and booking logic of the cinema Thread-safe operations are ensured using
@@ -27,7 +29,7 @@ public class CinemaHall {
   public final ReentrantLock bookingLock = new ReentrantLock();
   private final String movieTitle;
   private final int totalRows;
-  private final int seatsPerRow;
+  public final int seatsPerRow;
   private final AtomicInteger bookingCounter = new AtomicInteger(0);
   private final DefaultPriorityStrategy defaultPriorityStrategy = new GICDefaultPriorityStrategy();
   private final int[] defaultColPriority;
@@ -128,7 +130,7 @@ public class CinemaHall {
 
   private Booking finalizeBooking(String bookingId, int numTickets, List<int[]> selectedSeats) {
     if (bookingId == null) {
-      bookingId = String.format("GIC%04d", bookingCounter.incrementAndGet());
+      bookingId = String.format(GIC_BOOKING_ID, bookingCounter.incrementAndGet());
     }
     // Mark new seats as booked
     for (int[] seat : selectedSeats) {

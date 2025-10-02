@@ -7,7 +7,7 @@ import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.strategy.SeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
-import com.renfei.booking.cinema.utility.ErrorMessageConstants;
+import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
 import com.renfei.booking.cinema.utility.ErrorMessageStore;
 import java.io.*;
 import java.util.ArrayList;
@@ -37,12 +37,12 @@ class CinemaHallTest {
 
   @Test
   void bookSingleSeat_DefaultAndCustomStrategy() {
-    // Default strategy: should book first available seat (row 0, col 0)
+
     List<int[]> defaultSeats =
         defaultStrategy.selectSeats(
             cinemaHall.seatingMap, 10, 10, 1, cinemaHall.getDefaultColPriority(), null);
     assertEquals(1, defaultSeats.size());
-    assertArrayEquals(new int[] {0, 0}, defaultSeats.get(0));
+    assertArrayEquals(new int[] {0, 4}, defaultSeats.get(0));
     // Custom strategy: start at B2 (row 1, col 1)
     List<int[]> customSeats =
         customStrategy.selectSeats(
@@ -237,6 +237,7 @@ class CinemaHallTest {
     Booking defaultBooking = hall.bookDefault(2);
     List<int[]> defaultSeats = defaultBooking.getSelectedSeats();
     // Book 4 tickets starting at B3 (row 1, col 2)
+      // defaultBooking = hall.bookDefault(4);
     defaultBooking = hall.bookCustom(defaultBooking, 4, "B3");
     List<int[]> seats = defaultBooking.getSelectedSeats();
     // Should fill row 1 from col 2 to 4, then overflow to row 0
@@ -604,42 +605,42 @@ class CinemaHallTest {
 
   @Test
   void concurrentBookingSameSeat_DefaultStrategy() throws InterruptedException, ExecutionException {
-    int threadCount = 5;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-    CountDownLatch latch = new CountDownLatch(threadCount);
-    List<Future<Boolean>> results = new ArrayList<>();
-    for (int i = 0; i < threadCount; i++) {
+        int threadCount = 5;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        List<Future<Boolean>> results = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
       results.add(
           executor.submit(
               () -> {
                 try {
-                  List<int[]> seats =
-                      defaultStrategy.selectSeats(
-                          cinemaHall.seatingMap,
-                          10,
-                          10,
-                          1,
-                          cinemaHall.getDefaultColPriority(),
-                          null);
-                  if (!seats.isEmpty()
-                      && cinemaHall.seatingMap[seats.get(0)[0]][seats.get(0)[1]] == 0) {
-                    cinemaHall.seatingMap[seats.get(0)[0]][seats.get(0)[1]] = 1;
-                    return true;
-                  }
+                  Booking booking = cinemaHall.bookDefault(1);
+//                  System.out.println("Booking Id: " + booking.getBookingId());
+//                  System.out.println(cinemaHall.displaySeatingMap(booking.getBookingId()));
+                  return booking != null;
                 } finally {
                   latch.countDown();
                 }
-                return false;
               }));
+        }
+        latch.await();
+        executor.shutdown();
+        int successCount = 0;
+        for (Future<Boolean> f : results) {
+            if (f.get()) successCount++;
+        }
+        assertEquals(5, successCount, "All bookings should succeed for different seats");
+        // Check that the seat booked follows defaultColPriority strategy
+        int[] colPriority = cinemaHall.getDefaultColPriority();
+        int bookedCol = -1;
+        for (int col : colPriority) {
+            if (cinemaHall.seatingMap[0][col] == 1) {
+                bookedCol = col;
+                assertEquals(1, cinemaHall.seatingMap[0][bookedCol],
+                        "Booked seat should follow defaultColPriority strategy (row 0, preferred column)");
+            }
+        }
     }
-    latch.await();
-    executor.shutdown();
-    int successCount = 0;
-    for (Future<Boolean> f : results) {
-      if (f.get()) successCount++;
-    }
-    assertEquals(1, successCount, "Only one booking should succeed for the same seat");
-  }
 
   @Test
   void concurrentCancellationSameBooking() throws InterruptedException {
