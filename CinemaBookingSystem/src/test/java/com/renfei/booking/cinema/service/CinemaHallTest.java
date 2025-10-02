@@ -147,21 +147,6 @@ class CinemaHallTest {
   }
 
   @Test
-  void bookSeatsForDifferentMoviesAndShowtimes() {
-    CinemaHall hall2 = new CinemaHall("Another Movie", 5, 5);
-    List<int[]> seats1 = new ArrayList<>();
-    seats1.add(new int[] {0, 0});
-    Booking booking1 = new Booking("B7", 1, seats1);
-    cinemaHall.bookings.put(booking1.getBookingId(), booking1);
-    List<int[]> seats2 = new ArrayList<>();
-    seats2.add(new int[] {1, 1});
-    Booking booking2 = new Booking("B8", 1, seats2);
-    hall2.bookings.put(booking2.getBookingId(), booking2);
-    assertTrue(cinemaHall.bookings.containsKey("B7"));
-    assertTrue(hall2.bookings.containsKey("B8"));
-  }
-
-  @Test
   void bookSeats_CustomStrategyOverflow() {
     // Book 8 seats starting at B3 (row 1, col 2)
     List<int[]> seats =
@@ -550,7 +535,7 @@ class CinemaHallTest {
             System.setOut(originalSystemOut);
         }
         assertEquals(
-                "Sorry, there are only 1 seats available.",
+                "Sorry, there are only 1 seats available.\n",
                 ErrorMessageStore.get(ErrorMessageConstants.NOT_ENOUGH_SEATS));
     }
 

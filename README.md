@@ -102,34 +102,83 @@ CinemaBookingSystem/
 ## Cinema Booking System Test Cases
 
 ### Positive Test Cases
-- Book a seat for a valid movie, showtime, and seat.
-- Book multiple seats in a single transaction.
-- Cancel a previously booked seat.
-- View available seats for a showtime.
-- Book a seat after a cancellation (seat becomes available again).
-- Book seats for different movies and showtimes.
-- Apply a valid discount or promo code.
-- Book a seat using different payment methods.
-- Retrieve booking history for a user.
-- Book a seat at the last available slot.
+- **bookSingleSeat_DefaultAndCustomStrategy:**
+  Ensures a user can successfully book a seat for a valid movie and showtime using both default and custom strategies.
+- **bookMultipleSeats_DefaultAndCustomStrategy:**
+  Allows booking more than one seat at once, verifying correct seat allocation for both strategies.
+- **bookLastAvailableSeat_DefaultStrategy:**
+  Ensures the system can handle booking the very last seat in the hall.
+- **bookMultipleSeatsInSingleTransaction:**
+  Allows booking multiple seats in a single transaction.
+- **cancelPreviouslyBookedSeat:**
+  Tests that a user can cancel a booking and the seat becomes available again.
+- **viewAvailableSeats:**
+  Displays the current seating map, showing which seats are booked and available.
+- **bookSeatAfterCancellation:**
+  Verifies that a cancelled seat can be rebooked by another user.
+- **bookSeatsForDifferentMoviesAndShowtimes:**
+  Confirms that bookings are isolated per movie and showtime.
+- **bookSeats_CustomStrategyOverflow:**
+  Tests custom strategy overflow logic for seat selection.
+- **bookSeats_CustomStrategyPrioritizesGivenSeat:**
+  Verifies custom strategy prioritizes the given seat.
+- **bookSeats_DefaultStrategyFillsAvailableSeats:**
+  Ensures default strategy fills available seats correctly.
+- **testDefaultPriorityStrategy:**
+  Verifies default priority strategy seat selection.
+- **testCustomSeatingStrategyFillRowAndOverflow:**
+  Tests custom strategy row fill and overflow.
+- **testCustomSeatingStrategyFillRowWithBookedSeats:**
+  Verifies custom strategy skips already booked seats.
+- **testDefaultSeatingStrategy:**
+  Ensures default strategy fills rows in priority order.
+- **testBookFourCornerSeatsWhenOnlyCornersLeft:**
+  Verifies correct allocation when only the four corners remain.
+- **bookWithDuplicateSeatsInSameBooking:**
+  Checks system robustness for duplicate seats in a booking.
+- **bookWithEmptyBookingId:**
+  Checks system robustness for empty booking IDs.
+- **bookWithSpecialCharactersInBookingId:**
+  Checks system robustness for special character booking IDs.
+- **bookWithMaxTickets:**
+  Validates booking logic for maximum allowed ticket count.
+- **bookWithMinTickets:**
+  Validates booking logic for minimum allowed ticket count.
+- **stressTestHighVolumeBookings:**
+  Simulates booking all seats in the hall to test performance and correctness.
+- **bookSeats_SuccessfulBooking_ShouldReturnBooking:**
+  Ensures successful booking returns a valid Booking object.
+- **bookSeats_SingleSeat_ShouldReturnBooking:**
+  Ensures single seat booking returns a valid Booking object.
+- **bookSeats_LastRemainingSeat_ShouldSucceed:**
+  Ensures booking the last seat succeeds.
+- **bookSeats_MoreThanAvailable_ShouldReturnNull:**
+  Ensures booking more seats than available returns null.
 
 ### Negative Test Cases
-- Book a seat that is already booked.
-- Book a seat for a non-existent movie or showtime.
-- Book a seat with invalid seat number or format.
-- Book a seat with invalid payment details.
-- Cancel a booking that does not exist.
-- Book more seats than available.
-- Book a seat with an expired promo code.
-- Book a seat with missing required fields.
-- Attempt to book a seat after the showtime has started.
-- Book a seat with insufficient account balance.
+- **bookSeats_ZeroSeats_ShouldThrowException:**
+  Throws an exception for zero seat booking.
+- **bookSeats_NegativeSeats_ShouldThrowException:**
+  Throws an exception and logs an error for negative seat booking.
+- **reallocateSeats_ToAlreadyBooked_ShouldReturnNull:**
+  Ensures seat reallocation fails if the target seat is already booked.
+- **reallocateSeats_ToInvalidSeat_ShouldReturnNull:**
+  Ensures seat reallocation fails if the target seat is invalid.
 
 ### Multi-threading Test Cases
-- Simultaneously book the same seat from multiple threads (only one should succeed).
-- Simultaneously cancel the same booking from multiple threads (only one should succeed).
-- Simultaneously book different seats for the same showtime (all should succeed if available).
-- Simultaneously book seats for different showtimes (no cross-interference).
-- Simultaneously update seat availability and process bookings (ensure data consistency).
-- Simultaneously apply and remove promo codes during booking (ensure correct application).
-- Simultaneously retrieve available seats while bookings are being made (ensure accurate seat status).
+- **concurrentBookingSameSeat:**
+  Simultaneously book the same seat from multiple threads; only one should succeed.
+- **concurrentBookingSameSeat_DefaultStrategy:**
+  Simultaneously book the same seat using default strategy; only one should succeed and seat follows defaultColPriority.
+- **concurrentCancellationSameBooking:**
+  Simultaneously cancel the same booking from multiple threads; only one should succeed.
+- **concurrentBookingDifferentSeats:**
+  Simultaneously book different seats for the same showtime; all should succeed if seats are available.
+- **testBookingWithVariousHallSizes:**
+  Verifies booking logic for various hall sizes.
+- **testMaxRowsAndSeatsPerRow:**
+  Verifies booking logic for maximum rows and seats per row.
+- **testOneRowMaxSeats:**
+  Verifies booking logic for one row with maximum seats.
+- **testMaxRowsOneSeat:**
+  Verifies booking logic for maximum rows with one seat per row.

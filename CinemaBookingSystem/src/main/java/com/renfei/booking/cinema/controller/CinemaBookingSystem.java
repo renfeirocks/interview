@@ -127,7 +127,7 @@ public class CinemaBookingSystem {
           System.out.println(msg);
           ErrorMessageStore.put(ErrorMessageConstants.ALL_TICKETS_BOOKED, msg);
         } else if (tickets > hall.getAvailableSeatsCount()) {
-          String msg = String.format("Sorry, there are only %d seats available.", hall.getAvailableSeatsCount());
+          String msg = String.format("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
           System.out.print(msg);
           ErrorMessageStore.put(ErrorMessageConstants.NOT_ENOUGH_SEATS, msg);
         } else {
