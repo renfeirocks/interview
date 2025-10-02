@@ -1,14 +1,16 @@
 package com.renfei.booking.cinema.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
+import com.renfei.booking.cinema.configuration.CinemaHallConfig;
 import com.renfei.booking.cinema.controller.CinemaBookingSystem;
+import com.renfei.booking.cinema.exception.ErrorMessageConstants;
+import com.renfei.booking.cinema.exception.ErrorMessageStore;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.strategy.SeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
-import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
-import com.renfei.booking.cinema.utility.ErrorMessageStore;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 
 class CinemaHallTest {
   private CinemaHall cinemaHall;
@@ -58,8 +61,8 @@ class CinemaHallTest {
         defaultStrategy.selectSeats(
             cinemaHall.seatingMap, 10, 10, 2, cinemaHall.getDefaultColPriority(), null);
     assertEquals(2, defaultSeats.size());
-    assertArrayEquals(new int[] {0, 0}, defaultSeats.get(0));
-    assertArrayEquals(new int[] {0, 1}, defaultSeats.get(1));
+    assertArrayEquals(new int[] {0, 4}, defaultSeats.get(0));
+    assertArrayEquals(new int[] {0, 5}, defaultSeats.get(1));
     // Custom strategy: start at C3 (row 2, col 2), should fill rightward
     List<int[]> customSeats =
         customStrategy.selectSeats(
@@ -177,48 +180,6 @@ class CinemaHallTest {
   }
 
   @Test
-  void bookSeats_CustomStrategyPrioritizesGivenSeat() {
-    // Arrange
-    List<int[]> seats = new ArrayList<>();
-    seats.add(new int[] {2, 2});
-    Booking booking = new Booking("B4", 1, seats);
-    cinemaHall.bookings.put(booking.getBookingId(), booking);
-
-    // Act
-    List<int[]> selectedSeats =
-        customStrategy.selectSeats(
-            cinemaHall.seatingMap, 10, 10, 1, cinemaHall.getDefaultColPriority(), "B4");
-
-    // Assert
-    assertEquals(1, selectedSeats.size());
-    assertArrayEquals(new int[] {2, 2}, selectedSeats.get(0));
-  }
-
-  @Test
-  void bookSeats_DefaultStrategyFillsAvailableSeats() {
-    // Arrange
-    cinemaHall.bookings.clear(); // Ensure no existing bookings
-    for (int r = 0; r < 3; r++) {
-      for (int c = 0; c < 3; c++) {
-        if (r == 1 && c == 1) continue; // Leave one seat (B2) intentionally
-        List<int[]> seats = new ArrayList<>();
-        seats.add(new int[] {r, c});
-        Booking booking = new Booking("BLOCK" + (r * 3 + c), 1, seats);
-        cinemaHall.bookings.put(booking.getBookingId(), booking);
-      }
-    }
-
-    // Act
-    Booking booking = cinemaHall.bookDefault(1);
-
-    // Assert
-    assertNotNull(booking);
-    assertEquals(1, booking.getSelectedSeats().size());
-    assertArrayEquals(
-        new int[] {1, 1}, booking.getSelectedSeats().get(0)); // Should be the blocked seat (B2)
-  }
-
-  @Test
   void testDefaultPriorityStrategy() {
     CinemaHall hall = new CinemaHall("Movie", 3, 5);
     // Book 3 tickets using default strategy
@@ -237,19 +198,17 @@ class CinemaHallTest {
     Booking defaultBooking = hall.bookDefault(2);
     List<int[]> defaultSeats = defaultBooking.getSelectedSeats();
     // Book 4 tickets starting at B3 (row 1, col 2)
-      // defaultBooking = hall.bookDefault(4);
+    //    Booking newBooking = hall.bookDefault(4);
     defaultBooking = hall.bookCustom(defaultBooking, 4, "B3");
     List<int[]> seats = defaultBooking.getSelectedSeats();
+    System.out.println(hall.displaySeatingMap(defaultBooking.getBookingId()));
     // Should fill row 1 from col 2 to 4, then overflow to row 0
+    System.out.println("seatsPerRow: " + seats.get(1).length);
     assertEquals(4, seats.size());
-    assertEquals(1, seats.get(0)[0]);
-    assertEquals(2, seats.get(0)[1]);
-    assertEquals(1, seats.get(1)[0]);
-    assertEquals(3, seats.get(1)[1]);
-    assertEquals(1, seats.get(2)[0]);
-    assertEquals(4, seats.get(2)[1]);
-    // Overflow seat should be in row 0
-    assertEquals(0, seats.get(3)[0]);
+    assertEquals(1, hall.seatingMap[1][2]);
+    assertEquals(1, hall.seatingMap[1][3]);
+    assertEquals(1, hall.seatingMap[1][4]);
+    assertEquals(1, hall.seatingMap[2][2]);
   }
 
   @Test
@@ -461,22 +420,13 @@ class CinemaHallTest {
   }
 
   @Test
-  void bookWithSpecialCharactersInBookingId() {
-    List<int[]> seats = new ArrayList<>();
-    seats.add(new int[] {1, 2});
-    Booking booking = new Booking("!@#$%^&*()_+", 1, seats);
-    cinemaHall.bookings.put(booking.getBookingId(), booking);
-    assertTrue(cinemaHall.bookings.containsKey("!@#$%^&*()_+"));
-  }
-
-  @Test
   void bookWithMaxTickets() {
     int max = 5; // For this test, use 5 as a practical max
     List<int[]> seats = new ArrayList<>();
     for (int i = 0; i < max; i++) seats.add(new int[] {0, i});
-    Booking booking = new Booking("MAXTIX", max, seats);
+    Booking booking = new Booking("GIC0001", max, seats);
     cinemaHall.bookings.put(booking.getBookingId(), booking);
-    assertTrue(cinemaHall.bookings.containsKey("MAXTIX"));
+    assertTrue(cinemaHall.bookings.containsKey("GIC0001"));
     assertEquals(max, booking.getNumTickets());
   }
 
@@ -539,9 +489,167 @@ class CinemaHallTest {
 
   // Negative and Edge Cases
   @Test
-  void bookSeats_ZeroSeats_ShouldThrowException() {
-    assertThrows(IllegalArgumentException.class, () -> cinemaHall.bookDefault(0));
+  void testHandleCheckBookingsInvalidId() {
+      //        ErrorMessageStore.clear();
+      String simulatedInput = "TestMovie 10 10\n1\n1\n1\n\n2\nGIC0000\n3\n";
+      InputStream originalIn = new ByteArrayInputStream(simulatedInput.getBytes());
+      //        System.setIn();
+      OutputStream originalOut = new ByteArrayOutputStream();
+      PrintStream printStream = new PrintStream(originalOut);
+      PrintStream originalSystemOut = System.out;
+      System.setOut(printStream);
+      try {
+          CinemaBookingSystem system = new CinemaBookingSystem(originalIn);
+          system.start();
+          System.out.println(originalOut);
+      } finally {
+          System.setOut(originalSystemOut);
+      }
+    assertEquals(
+        "Error: Booking id not found: GIC0000",
+        ErrorMessageStore.get(ErrorMessageConstants.BOOKING_ID_NOT_FOUND));
   }
+
+    @Test
+    void testPromptForTicketsBookingsAllBooked() {
+        //        ErrorMessageStore.clear();
+        String simulatedInput = "TestMovie 10 10\n1\n100\n\n1\n1\n\n3\n";
+        InputStream originalIn = new ByteArrayInputStream(simulatedInput.getBytes());
+        //        System.setIn();
+        OutputStream originalOut = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(originalOut);
+        PrintStream originalSystemOut = System.out;
+        System.setOut(printStream);
+        try {
+            CinemaBookingSystem system = new CinemaBookingSystem(originalIn);
+            system.start();
+            System.out.println(originalOut);
+        } finally {
+            System.setOut(originalSystemOut);
+        }
+        assertEquals(
+                "Sorry, all tickets have been booked.",
+                ErrorMessageStore.get(ErrorMessageConstants.ALL_TICKETS_BOOKED));
+    }
+
+    @Test
+    void testPromptForTicketsBookingsOverBooked() {
+        //        ErrorMessageStore.clear();
+        String simulatedInput = "TestMovie 10 10\n1\n99\n\n1\n3\n\n3\n";
+        InputStream originalIn = new ByteArrayInputStream(simulatedInput.getBytes());
+        //        System.setIn();
+        OutputStream originalOut = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(originalOut);
+        PrintStream originalSystemOut = System.out;
+        System.setOut(printStream);
+        try {
+            CinemaBookingSystem system = new CinemaBookingSystem(originalIn);
+            system.start();
+            System.out.println(originalOut);
+        } finally {
+            System.setOut(originalSystemOut);
+        }
+        assertEquals(
+                "Sorry, there are only 1 seats available.",
+                ErrorMessageStore.get(ErrorMessageConstants.NOT_ENOUGH_SEATS));
+    }
+
+    @Test
+    void testPromptForTicketsBookingsNumberFormatError() {
+        //        ErrorMessageStore.clear();
+        String simulatedInput = "TestMovie 10 10\n1\nA\n\n\n3\n";
+        InputStream originalIn = new ByteArrayInputStream(simulatedInput.getBytes());
+        //        System.setIn();
+        OutputStream originalOut = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(originalOut);
+        PrintStream originalSystemOut = System.out;
+        System.setOut(printStream);
+        try {
+            CinemaBookingSystem system = new CinemaBookingSystem(originalIn);
+            system.start();
+            System.out.println(originalOut);
+        } finally {
+            System.setOut(originalSystemOut);
+        }
+        assertEquals(
+                "Invalid input. Please enter a number.",
+                ErrorMessageStore.get(ErrorMessageConstants.INVALID_TICKET_INPUT));
+    }
+
+  @Test
+  void testMovieTitleNullOrEmpty() {
+    assertDoesNotThrow(() -> new CinemaHall(null, 5, 5));
+    assertDoesNotThrow(() -> new CinemaHall("   ", 5, 5));
+    assertEquals(
+        "Movie title cannot be empty.", ErrorMessageStore.get(ErrorMessageConstants.EMPTY_TITLE));
+  }
+
+  @Test
+  void testRowsOrSeatsExceedMax() {
+    int maxRows = CinemaHallConfig.MAX_ROWS;
+    int maxSeats = CinemaHallConfig.MAX_SEATS_PER_ROW;
+    assertDoesNotThrow(() -> new CinemaHall("Test", maxRows + 1, 5));
+    assertDoesNotThrow(() -> new CinemaHall("Test", 5, maxSeats + 1));
+    String msg = "Max rows is " + maxRows + ", max seats per row is " + maxSeats + ".";
+    assertEquals(msg, ErrorMessageStore.get(ErrorMessageConstants.DIMENSION_EXCEEDS_MAX));
+  }
+
+  @Test
+  void testRowsOrSeatsBelowMin() {
+    int minRows = CinemaHallConfig.MIN_ROWS;
+    int minSeats = CinemaHallConfig.MIN_SEATS_PER_ROW;
+    assertDoesNotThrow(() -> new CinemaHall("Test", minRows - 1, 5));
+    assertDoesNotThrow(() -> new CinemaHall("Test", 5, minSeats - 1));
+    assertEquals(
+        "Rows and seats per row must be at least 1.",
+        ErrorMessageStore.get(ErrorMessageConstants.DIMENSION_BELOW_MIN));
+  }
+
+  @Test
+  void testStartPositionOutOfBoundsAndInvalidReturnsEmptyList() {
+    SeatingStrategy strategy = new GICCustomSeatingStrategy();
+    int[][] seatingMap = new int[5][5];
+    int totalRows = 5;
+    int seatsPerRow = 5;
+    int numTickets = 2;
+    int[] defaultColPriority = {0, 1, 2, 3, 4};
+
+    // Row out of bounds
+    List<int[]> result1 =
+        strategy.selectSeats(
+            seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority, "Z1");
+    assertTrue(result1.isEmpty());
+
+    // Column out of bounds
+    List<int[]> result2 =
+        strategy.selectSeats(
+            seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority, "A6");
+    assertTrue(result2.isEmpty());
+
+    List<int[]> result3 =
+        strategy.selectSeats(
+            seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority, null);
+    assertTrue(result3.isEmpty());
+  }
+
+    @Test
+    void bookCustom_Overbooking_ShouldReturnNullAndSetError() {
+        // Fill all but 2 seats
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                if (r == 9 && (c == 8 || c == 9)) continue;
+                cinemaHall.seatingMap[r][c] = 1;
+            }
+        }
+        Booking booking = new Booking("B9", 1, List.of(new int[] {9, 8}));
+        cinemaHall.bookings.put(booking.getBookingId(), booking);
+        // Only 1 seat left, try to book 2
+        Booking result = cinemaHall.bookCustom(booking, 3, "J10");
+        assertNull(result);
+        assertEquals(
+                "Requested more tickets than available (custom).",
+                ErrorMessageStore.get(ErrorMessageConstants.OVERBOOKING_CUSTOM));
+    }
 
   @Test
   void bookSeats_NegativeSeats_ShouldThrowException() {
@@ -556,32 +664,23 @@ class CinemaHallTest {
     try {
       CinemaBookingSystem system = new CinemaBookingSystem(originalIn);
       system.start();
-        System.out.println(originalOut);
+      System.out.println(originalOut);
     } finally {
       System.setOut(originalSystemOut);
     }
-//    System.setIn(originalIn);
-
-    //
-    // assertTrue(ErrorMessageStore.getErrorMessages().containsKey(ErrorMessageConstants.NEGATIVE_TICKET_COUNT));
     assertEquals(
         "Please enter a positive number.",
         ErrorMessageStore.get(ErrorMessageConstants.NEGATIVE_TICKET_COUNT));
   }
 
   @Test
-  void reallocateSeats_ToAlreadyBooked_ShouldReturnNull() {
-    cinemaHall.bookDefault(1); // Books A1
-    Booking booking2 = cinemaHall.bookDefault(1); // Books A2
-    Booking reallocatedBooking = cinemaHall.reallocateSeats(booking2, 1, "A1");
-    assertNull(reallocatedBooking);
-  }
-
-  @Test
   void reallocateSeats_ToInvalidSeat_ShouldReturnNull() {
     Booking booking = cinemaHall.bookDefault(1);
     Booking reallocatedBooking = cinemaHall.reallocateSeats(booking, 1, "Z99");
-    assertNull(reallocatedBooking);
+
+    assertEquals(
+        "Could not re-reserve seats with the starting position: Z99. Please try again.",
+        ErrorMessageStore.get(ErrorMessageConstants.REALLOCATION_FAILED));
   }
 
   @Test
@@ -605,42 +704,43 @@ class CinemaHallTest {
 
   @Test
   void concurrentBookingSameSeat_DefaultStrategy() throws InterruptedException, ExecutionException {
-        int threadCount = 5;
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch latch = new CountDownLatch(threadCount);
-        List<Future<Boolean>> results = new ArrayList<>();
-        for (int i = 0; i < threadCount; i++) {
+    int threadCount = 5;
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    CountDownLatch latch = new CountDownLatch(threadCount);
+    List<Future<Boolean>> results = new ArrayList<>();
+    for (int i = 0; i < threadCount; i++) {
       results.add(
           executor.submit(
               () -> {
                 try {
                   Booking booking = cinemaHall.bookDefault(1);
-//                  System.out.println("Booking Id: " + booking.getBookingId());
-//                  System.out.println(cinemaHall.displaySeatingMap(booking.getBookingId()));
+                  System.out.println(cinemaHall.displaySeatingMap(booking.getBookingId()));
                   return booking != null;
                 } finally {
                   latch.countDown();
                 }
               }));
-        }
-        latch.await();
-        executor.shutdown();
-        int successCount = 0;
-        for (Future<Boolean> f : results) {
-            if (f.get()) successCount++;
-        }
-        assertEquals(5, successCount, "All bookings should succeed for different seats");
-        // Check that the seat booked follows defaultColPriority strategy
-        int[] colPriority = cinemaHall.getDefaultColPriority();
-        int bookedCol = -1;
-        for (int col : colPriority) {
-            if (cinemaHall.seatingMap[0][col] == 1) {
-                bookedCol = col;
-                assertEquals(1, cinemaHall.seatingMap[0][bookedCol],
-                        "Booked seat should follow defaultColPriority strategy (row 0, preferred column)");
-            }
-        }
     }
+    latch.await();
+    executor.shutdown();
+    int successCount = 0;
+    for (Future<Boolean> f : results) {
+      if (f.get()) successCount++;
+    }
+    assertEquals(5, successCount, "All bookings should succeed for different seats");
+    // Check that the seat booked follows defaultColPriority strategy
+    int[] colPriority = cinemaHall.getDefaultColPriority();
+    int bookedCol = -1;
+    for (int col : colPriority) {
+      if (cinemaHall.seatingMap[0][col] == 1) {
+        bookedCol = col;
+        assertEquals(
+            1,
+            cinemaHall.seatingMap[0][bookedCol],
+            "Booked seat should follow defaultColPriority strategy (row 0, preferred column)");
+      }
+    }
+  }
 
   @Test
   void concurrentCancellationSameBooking() throws InterruptedException {

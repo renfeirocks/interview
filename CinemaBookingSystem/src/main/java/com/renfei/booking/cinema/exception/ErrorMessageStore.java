@@ -1,4 +1,4 @@
-package com.renfei.booking.cinema.utility;
+package com.renfei.booking.cinema.exception;
 
 import java.util.HashMap;
 
@@ -15,9 +15,5 @@ public class ErrorMessageStore {
 
   public static String get(String key) {
     return errorMessages.get(key);
-  }
-
-  public static void clear() {
-    errorMessages.clear();
   }
 }

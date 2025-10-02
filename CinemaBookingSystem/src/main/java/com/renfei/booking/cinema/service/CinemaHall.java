@@ -1,14 +1,16 @@
 package com.renfei.booking.cinema.service;
 
+import static com.renfei.booking.cinema.configuration.CinemaHallConfig.GIC_BOOKING_ID;
+import static com.renfei.booking.cinema.configuration.CinemaHallConfig.SCREEN;
+
 import com.renfei.booking.cinema.configuration.CinemaHallConfig;
-import com.renfei.booking.cinema.exception.BookingException;
+import com.renfei.booking.cinema.exception.ErrorMessageConstants;
+import com.renfei.booking.cinema.exception.ErrorMessageStore;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.strategy.DefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
-import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
-import com.renfei.booking.cinema.utility.ErrorMessageStore;
 import com.renfei.booking.cinema.utility.SeatUtil;
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +18,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
-
-import static com.renfei.booking.cinema.configuration.CinemaHallConfig.GIC_BOOKING_ID;
 
 /**
  * Manages the state and booking logic of the cinema Thread-safe operations are ensured using
@@ -27,31 +27,31 @@ public class CinemaHall {
   public final Map<String, Booking> bookings = new HashMap<>();
   public final int[][] seatingMap;
   public final ReentrantLock bookingLock = new ReentrantLock();
+  public final int seatsPerRow;
   private final String movieTitle;
   private final int totalRows;
-  public final int seatsPerRow;
   private final AtomicInteger bookingCounter = new AtomicInteger(0);
   private final DefaultPriorityStrategy defaultPriorityStrategy = new GICDefaultPriorityStrategy();
   private final int[] defaultColPriority;
 
-  public CinemaHall(String movieTitle, int rows, int seatsPerRow) throws BookingException {
+  public CinemaHall(String movieTitle, int rows, int seatsPerRow)  {
     int maxRows = CinemaHallConfig.MAX_ROWS;
     int maxSeatsPerRow = CinemaHallConfig.MAX_SEATS_PER_ROW;
     int minRows = CinemaHallConfig.MIN_ROWS;
     int minSeatsPerRow = CinemaHallConfig.MIN_SEATS_PER_ROW;
     if (movieTitle == null || movieTitle.trim().isEmpty()) {
       ErrorMessageStore.put(ErrorMessageConstants.EMPTY_TITLE, "Movie title cannot be empty.");
-      throw new BookingException("Movie title cannot be empty.");
+      System.out.println("Movie title cannot be empty.");
     }
     if (rows > maxRows || seatsPerRow > maxSeatsPerRow) {
       String msg = "Max rows is " + maxRows + ", max seats per row is " + maxSeatsPerRow + ".";
       ErrorMessageStore.put(ErrorMessageConstants.DIMENSION_EXCEEDS_MAX, msg);
-      throw new BookingException(msg);
+      System.out.println(msg);
     }
     if (rows < minRows || seatsPerRow < minSeatsPerRow) {
       String msg = "Rows and seats per row must be at least 1.";
       ErrorMessageStore.put(ErrorMessageConstants.DIMENSION_BELOW_MIN, msg);
-      throw new BookingException(msg);
+      System.out.println(msg);
     }
     this.movieTitle = movieTitle;
     this.totalRows = rows;
@@ -75,7 +75,8 @@ public class CinemaHall {
     bookingLock.lock();
     try {
       if (numTickets > getAvailableSeatsCount()) {
-        ErrorMessageStore.put(ErrorMessageConstants.OVERBOOKING, "Requested more tickets than available.");
+        ErrorMessageStore.put(
+            ErrorMessageConstants.OVERBOOKING, "Requested more tickets than available.");
         return null;
       }
       List<int[]> selectedSeats =
@@ -86,7 +87,8 @@ public class CinemaHall {
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(null, numTickets, selectedSeats);
       }
-      ErrorMessageStore.put(ErrorMessageConstants.SEAT_SELECTION_FAILED, "Could not find enough contiguous seats.");
+      ErrorMessageStore.put(
+          ErrorMessageConstants.SEAT_SELECTION_FAILED, "Could not find enough contiguous seats.");
       return null;
     } finally {
       bookingLock.unlock();
@@ -104,7 +106,9 @@ public class CinemaHall {
     bookingLock.lock();
     try {
       if (numTickets > getAvailableSeatsCount()) {
-        ErrorMessageStore.put(ErrorMessageConstants.OVERBOOKING_CUSTOM, "Requested more tickets than available (custom).");
+        ErrorMessageStore.put(
+            ErrorMessageConstants.OVERBOOKING_CUSTOM,
+            "Requested more tickets than available (custom).");
         return null;
       }
 
@@ -121,7 +125,9 @@ public class CinemaHall {
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(booking.getBookingId(), numTickets, selectedSeats);
       }
-      ErrorMessageStore.put(ErrorMessageConstants.CUSTOM_SEAT_SELECTION_FAILED, "Could not find enough contiguous seats (custom).");
+      ErrorMessageStore.put(
+          ErrorMessageConstants.CUSTOM_SEAT_SELECTION_FAILED,
+          "Could not find enough contiguous seats (custom).");
       return null; // Failed to find contiguous seats/overflow
     } finally {
       bookingLock.unlock();
@@ -149,7 +155,7 @@ public class CinemaHall {
     StringBuilder sb = new StringBuilder();
     int seatSymbolWidth = 3; // " %2s"
     int totalWidth = seatsPerRow * seatSymbolWidth;
-    String screenLabel = "S C R E E N";
+    String screenLabel = SCREEN;
     // Center the screen label above the seats
     int screenLabelPadding = Math.max(0, (totalWidth - screenLabel.length()) / 2);
     sb.append("  ").append(" ".repeat(screenLabelPadding)).append(screenLabel).append("\n");
@@ -189,7 +195,7 @@ public class CinemaHall {
     sb.append("  ");
     for (int c = 1; c <= seatsPerRow; c++) {
       if (c > 9) {
-        sb.append(String.format(" %3d", c) );
+        sb.append(String.format(" %3d", c));
       } else {
         sb.append(String.format(" %2d", c));
       }
@@ -231,7 +237,10 @@ public class CinemaHall {
         for (int[] seat : oldSeats) {
           seatingMap[seat[0]][seat[1]] = 1; // Mark old seats as booked (1) again
         }
-        String msg = "Could not re-reserve seats with the starting position: " + newPos + ". Please try again.";
+        String msg =
+            "Could not re-reserve seats with the starting position: "
+                + newPos
+                + ". Please try again.";
         ErrorMessageStore.put(ErrorMessageConstants.REALLOCATION_FAILED, msg);
         System.out.println(msg);
         // Display the seating map with the old selection highlighted.

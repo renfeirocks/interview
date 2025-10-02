@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MovieInputTest {
 
-    @Test
-    void testMovieInputConstructor() {
-        MovieInput movieInput = new MovieInput("Inception", 10, 20);
+  @Test
+  void testMovieInputConstructor() {
+    MovieInput movieInput = new MovieInput("Inception", 10, 20);
 
-        assertEquals("Inception", movieInput.title);
-        assertEquals(10, movieInput.rows);
-        assertEquals(20, movieInput.seatsPerRow);
-    }
+    assertEquals("Inception", movieInput.title);
+    assertEquals(10, movieInput.rows);
+    assertEquals(20, movieInput.seatsPerRow);
+  }
 }

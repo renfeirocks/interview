@@ -1,7 +1,5 @@
 package com.renfei.booking.cinema.utility;
 
-import com.renfei.booking.cinema.exception.BookingException;
-
 public class SeatUtil {
   public static char rowIndexToLabel(int rowIndex) {
     return (char) ('A' + rowIndex);

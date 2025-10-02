@@ -1,11 +1,10 @@
 package com.renfei.booking.cinema.controller;
 
+import com.renfei.booking.cinema.exception.ErrorMessageConstants;
+import com.renfei.booking.cinema.exception.ErrorMessageStore;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.model.MovieInput;
 import com.renfei.booking.cinema.service.CinemaHall;
-import com.renfei.booking.cinema.configuration.ErrorMessageConstants;
-import com.renfei.booking.cinema.utility.ErrorMessageStore;
-
 import java.io.InputStream;
 import java.util.Scanner;
 
@@ -128,7 +127,7 @@ public class CinemaBookingSystem {
           System.out.println(msg);
           ErrorMessageStore.put(ErrorMessageConstants.ALL_TICKETS_BOOKED, msg);
         } else if (tickets > hall.getAvailableSeatsCount()) {
-          String msg = String.format("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
+          String msg = String.format("Sorry, there are only %d seats available.", hall.getAvailableSeatsCount());
           System.out.print(msg);
           ErrorMessageStore.put(ErrorMessageConstants.NOT_ENOUGH_SEATS, msg);
         } else {
