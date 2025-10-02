@@ -20,7 +20,7 @@ class CinemaBookingSystemTest {
     @BeforeEach
     void setUp() {
         hallMock = mock(CinemaHall.class);
-        system = Mockito.spy(new CinemaBookingSystem());
+        system = Mockito.spy(new CinemaBookingSystem(null));
         // Inject mock CinemaHall if needed
     }
 
@@ -29,7 +29,7 @@ class CinemaBookingSystemTest {
         String input = "Inception 10 20\n";
         InputStream in = new ByteArrayInputStream(input.getBytes());
         System.setIn(in);
-        CinemaBookingSystem sys = new CinemaBookingSystem();
+        CinemaBookingSystem sys = new CinemaBookingSystem(null);
         assertTrue(sys.initializeSystem());
     }
 
@@ -38,7 +38,7 @@ class CinemaBookingSystemTest {
         String input = "InvalidInput\n";
         InputStream in = new ByteArrayInputStream(input.getBytes());
         System.setIn(in);
-        CinemaBookingSystem sys = new CinemaBookingSystem();
+        CinemaBookingSystem sys = new CinemaBookingSystem(null);
         assertFalse(sys.initializeSystem());
     }
 

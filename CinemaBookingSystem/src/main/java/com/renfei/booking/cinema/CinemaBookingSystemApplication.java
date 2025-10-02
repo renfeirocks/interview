@@ -15,6 +15,6 @@ public class CinemaBookingSystemApplication implements CommandLineRunner {
   @Override
   public void run(String... args) throws Exception {
     // You can add any initialization code here if needed
-    new CinemaBookingSystem().start();
+    new CinemaBookingSystem(null).start();
   }
 }

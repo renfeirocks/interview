@@ -1,15 +1,28 @@
 package com.renfei.booking.cinema.controller;
 
-import com.renfei.booking.cinema.exception.BookingException;
 import com.renfei.booking.cinema.model.Booking;
 import com.renfei.booking.cinema.model.MovieInput;
 import com.renfei.booking.cinema.service.CinemaHall;
+import com.renfei.booking.cinema.utility.ErrorMessageConstants;
+import com.renfei.booking.cinema.utility.ErrorMessageStore;
+
+import java.io.InputStream;
 import java.util.Scanner;
 
 public class CinemaBookingSystem {
-  private final Scanner scanner = new Scanner(System.in);
+  private Scanner scanner;
   private CinemaHall hall;
   private volatile boolean running = true;
+
+
+  public CinemaBookingSystem(InputStream inputStream){
+      if(inputStream==null){
+          scanner = new Scanner(System.in);
+
+      }else{
+          scanner = new Scanner(inputStream);
+      }
+  }
 
   public void start() {
     while (!initializeSystem()) {
@@ -31,14 +44,18 @@ public class CinemaBookingSystem {
     System.out.print("> ");
     MovieInput input = parseMovieInput(scanner.nextLine().trim());
     if (input == null) {
-      System.out.println("Invalid format. Expected: [Title] [Row] [SeatsPerRow].");
+      String msg = "Invalid format. Expected: [Title] [Row] [SeatsPerRow].";
+      System.out.println(msg);
+      ErrorMessageStore.put(ErrorMessageConstants.INPUT_FORMAT_ERROR, msg);
       return false;
     }
     try {
       hall = new CinemaHall(input.title, input.rows, input.seatsPerRow);
       return true;
     } catch (Exception e) {
-      System.out.println("Error in dimensions: " + e.getMessage());
+      String msg = "Error in dimensions: " + e.getMessage();
+      System.out.println(msg);
+      ErrorMessageStore.put(ErrorMessageConstants.DIMENSION_ERROR, msg);
       return false;
     }
   }
@@ -84,7 +101,9 @@ public class CinemaBookingSystem {
 
     Booking booking = hall.bookDefault(tickets);
     if (booking == null) {
-      System.out.println("Error: Could not reserve seats. Returning to main menu.");
+      String msg = "Error: Could not reserve seats. Returning to main menu.";
+      System.out.println(msg);
+      ErrorMessageStore.put(ErrorMessageConstants.BOOKING_FAILED, msg);
       return;
     }
     confirmBooking(booking, tickets);
@@ -101,16 +120,24 @@ public class CinemaBookingSystem {
       try {
         int tickets = Integer.parseInt(input);
         if (tickets <= 0) {
-          System.out.println("Please enter a positive number.");
+          String msg = "Please enter a positive number.";
+          System.out.println(msg);
+          ErrorMessageStore.put(ErrorMessageConstants.NEGATIVE_TICKET_COUNT, msg);
         } else if (hall.getAvailableSeatsCount() == 0){
-          System.out.println("Sorry, all tickets have been booked.");
+          String msg = "Sorry, all tickets have been booked.";
+          System.out.println(msg);
+          ErrorMessageStore.put(ErrorMessageConstants.ALL_TICKETS_BOOKED, msg);
         } else if (tickets > hall.getAvailableSeatsCount()) {
-          System.out.printf("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
+          String msg = String.format("Sorry, there are only %d seats available.\n", hall.getAvailableSeatsCount());
+          System.out.print(msg);
+          ErrorMessageStore.put(ErrorMessageConstants.NOT_ENOUGH_SEATS, msg);
         } else {
           return tickets;
         }
       } catch (NumberFormatException e) {
-        System.out.println("Invalid input. Please enter a number.");
+        String msg = "Invalid input. Please enter a number.";
+        System.out.println(msg);
+        ErrorMessageStore.put(ErrorMessageConstants.INVALID_TICKET_INPUT, msg);
       }
     }
   }
@@ -145,7 +172,9 @@ public class CinemaBookingSystem {
     if (id.isEmpty()) return;
     Booking booking = hall.getBooking(id);
     if (booking == null) {
-      System.out.println("Error: Booking id not found: " + id);
+      String msg = "Error: Booking id not found: " + id;
+      System.out.println(msg);
+      ErrorMessageStore.put(ErrorMessageConstants.BOOKING_ID_NOT_FOUND, msg);
     } else {
       System.out.printf("Booking id: %s\nSelected seats:\n%s", id, hall.displaySeatingMap(id));
     }

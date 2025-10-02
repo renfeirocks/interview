@@ -7,6 +7,8 @@ import com.renfei.booking.cinema.strategy.DefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
+import com.renfei.booking.cinema.utility.ErrorMessageConstants;
+import com.renfei.booking.cinema.utility.ErrorMessageStore;
 import com.renfei.booking.cinema.utility.SeatUtil;
 import java.util.HashMap;
 import java.util.List;
@@ -36,14 +38,18 @@ public class CinemaHall {
     int minRows = CinemaHallConfig.MIN_ROWS;
     int minSeatsPerRow = CinemaHallConfig.MIN_SEATS_PER_ROW;
     if (movieTitle == null || movieTitle.trim().isEmpty()) {
+      ErrorMessageStore.put(ErrorMessageConstants.EMPTY_TITLE, "Movie title cannot be empty.");
       throw new BookingException("Movie title cannot be empty.");
     }
     if (rows > maxRows || seatsPerRow > maxSeatsPerRow) {
-      throw new BookingException(
-          "Max rows is " + maxRows + ", max seats per row is " + maxSeatsPerRow + ".");
+      String msg = "Max rows is " + maxRows + ", max seats per row is " + maxSeatsPerRow + ".";
+      ErrorMessageStore.put(ErrorMessageConstants.DIMENSION_EXCEEDS_MAX, msg);
+      throw new BookingException(msg);
     }
     if (rows < minRows || seatsPerRow < minSeatsPerRow) {
-      throw new BookingException("Rows and seats per row must be at least 1.");
+      String msg = "Rows and seats per row must be at least 1.";
+      ErrorMessageStore.put(ErrorMessageConstants.DIMENSION_BELOW_MIN, msg);
+      throw new BookingException(msg);
     }
     this.movieTitle = movieTitle;
     this.totalRows = rows;
@@ -67,6 +73,7 @@ public class CinemaHall {
     bookingLock.lock();
     try {
       if (numTickets > getAvailableSeatsCount()) {
+        ErrorMessageStore.put(ErrorMessageConstants.OVERBOOKING, "Requested more tickets than available.");
         return null;
       }
       List<int[]> selectedSeats =
@@ -77,6 +84,7 @@ public class CinemaHall {
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(null, numTickets, selectedSeats);
       }
+      ErrorMessageStore.put(ErrorMessageConstants.SEAT_SELECTION_FAILED, "Could not find enough contiguous seats.");
       return null;
     } finally {
       bookingLock.unlock();
@@ -86,13 +94,15 @@ public class CinemaHall {
   public Booking bookCustom(Booking booking, int numTickets, String startPosition) {
     int[] start = SeatUtil.parseSeatPosition(startPosition, totalRows, seatsPerRow);
     if (start == null) {
-      System.out.println("Invalid or out-of-bounds starting position: " + startPosition);
+      String msg = "Invalid or out-of-bounds starting position: " + startPosition;
+      ErrorMessageStore.put(ErrorMessageConstants.INVALID_START_POSITION, msg);
+      System.out.println(msg);
       return null;
     }
-
     bookingLock.lock();
     try {
       if (numTickets > getAvailableSeatsCount()) {
+        ErrorMessageStore.put(ErrorMessageConstants.OVERBOOKING_CUSTOM, "Requested more tickets than available (custom).");
         return null;
       }
 
@@ -109,6 +119,7 @@ public class CinemaHall {
       if (selectedSeats.size() == numTickets) {
         return finalizeBooking(booking.getBookingId(), numTickets, selectedSeats);
       }
+      ErrorMessageStore.put(ErrorMessageConstants.CUSTOM_SEAT_SELECTION_FAILED, "Could not find enough contiguous seats (custom).");
       return null; // Failed to find contiguous seats/overflow
     } finally {
       bookingLock.unlock();
@@ -218,10 +229,9 @@ public class CinemaHall {
         for (int[] seat : oldSeats) {
           seatingMap[seat[0]][seat[1]] = 1; // Mark old seats as booked (1) again
         }
-        System.out.println(
-            "Could not re-reserve seats with the starting position: "
-                + newPos
-                + ". Please try again.");
+        String msg = "Could not re-reserve seats with the starting position: " + newPos + ". Please try again.";
+        ErrorMessageStore.put(ErrorMessageConstants.REALLOCATION_FAILED, msg);
+        System.out.println(msg);
         // Display the seating map with the old selection highlighted.
         System.out.print(displaySeatingMap(booking.getBookingId()));
       }
@@ -229,5 +239,9 @@ public class CinemaHall {
       bookingLock.unlock();
     }
     return booking;
+  }
+
+  public int[] getDefaultColPriority() {
+    return defaultColPriority;
   }
 }

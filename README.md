@@ -1,5 +1,15 @@
 # Cinema Booking System
 
+## Overview
+This Cinema Booking System is a modular, thread-safe application for managing seat reservations in a cinema hall. It allows users to book seats for movies, supports customizable seat selection strategies, and ensures concurrency safety for multiple users booking simultaneously.
+
+## Assumptions
+- The cinema hall layout (number of rows and seats per row) is provided at startup.
+- Each booking is for a single movie session; multi-session or multi-hall support is not included.
+- Seat selection is based on either default or custom strategies, but only one strategy is active per booking.
+- No payment or user authentication is implemented; the focus is on seat allocation logic.
+- All bookings are processed in-memory; no external database is used.
+
 A robust, extensible, and thread-safe cinema seat booking system implemented in Java. This project demonstrates best practices in modular design, concurrency, extensibility, and error handling for a real-world booking application.
 
 ## Features
@@ -20,11 +30,33 @@ A robust, extensible, and thread-safe cinema seat booking system implemented in 
 - Java 17 or higher
 - Maven
 
-### Build & Run
+### Setup & Run
+1. Open a terminal and navigate to the project directory:
+   ```bash
+   cd /path/to/CinemaBookingSystem
+   ```
+2. Build the project:
+   ```bash
+   mvn clean install
+   ```
+3. Run the application:
+   ```bash
+   mvn spring-boot:run
+   ```
+4. Access the application:
+   - For CLI: On startup, enter `[Title] [Row] [SeatsPerRow]` (e.g., `Inception 8 12`)
+   - For REST API: Use endpoints as defined in the controller (see source code for details).
+
+### Running Tests
+To run unit tests:
 ```bash
-mvn clean install
-mvn spring-boot:run
+mvn test
 ```
+
+### Notes
+- Ensure JAVA_HOME is set to Java 17+.
+- No external database or authentication is required.
+- For advanced configuration, edit `src/main/resources/application.properties`.
 
 ### CLI Usage
 - On startup, enter: `[Title] [Row] [SeatsPerRow]` (e.g., `Inception 8 12`)
@@ -35,15 +67,27 @@ mvn spring-boot:run
 - Follow prompts to book, reallocate, or view seat map.
 
 ## Project Structure
+
+The system follows a layered architecture for clarity and extensibility:
+
+- **Controller:** Handles user/API requests and routes them to services.
+- **Service:** Contains business logic for booking, seat allocation, and concurrency.
+- **Model:** Defines core data structures (Booking, Movie, Seat).
+- **Strategy:** Pluggable seat selection and priority algorithms.
+- **Configuration:** Manages hall layout and system properties.
+- **Exception:** Custom error handling for booking and input issues.
+- **Utility:** Helper functions for seat mapping and validation.
+
+Directory layout:
 ```
 CinemaBookingSystem/
-├── configuration/         # Config classes (e.g., max rows/seats)
-├── controller/            # REST controllers (if API enabled)
-├── exception/             # Custom exceptions (e.g., BookingException)
-├── model/                 # Data models (Booking, etc.)
-├── service/               # Booking services, CinemaHall, interfaces
-├── strategy/              # Seat selection and priority strategies
-├── utility/               # Utility classes (SeatUtil, etc.)
+├── configuration/   # Hall setup and system config
+├── controller/      # API endpoints and CLI entry
+├── exception/       # Custom exceptions
+├── model/           # Booking and input data models
+├── service/         # Business logic and seat management
+├── strategy/        # Seat selection and priority strategies
+├── utility/         # Helper classes
 ```
 
 ## Extensibility & Customization
@@ -54,21 +98,6 @@ CinemaBookingSystem/
 ## Error Handling
 - All booking and seat selection errors throw custom exceptions for clear diagnostics.
 - Invalid input, overbooking, and seat position errors are handled gracefully.
-
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a pull request
-
-## License
-This project is licensed under the MIT License.
-
-## Contact
-For questions or support, please open an issue or contact the maintainer.
-
-# interview
 
 ## Cinema Booking System Test Cases
 
