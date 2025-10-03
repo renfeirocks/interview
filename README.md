@@ -67,7 +67,7 @@ mvn test
 
 The system follows a layered architecture for clarity and extensibility:
 
-- **Controller:** Handles user/API requests and routes them to services.
+- **Controller:** Handles user/API requests and routes them to services. Includes CLI logic with looping for booking checks.
 - **Service:** Contains business logic for booking, seat allocation, and concurrency.
 - **Model:** Defines core data structures (Booking, Movie, Seat).
 - **Strategy:** Pluggable seat selection and priority algorithms.
