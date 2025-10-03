@@ -166,17 +166,19 @@ public class CinemaBookingSystem {
     }
 
     private void handleCheckBookings() {
-        System.out.println("Enter booking id, or blank to go back:");
-        System.out.print("> ");
-        String id = scanner.nextLine().trim();
-        if (id.isEmpty()) return;
-        Booking booking = hall.getBooking(id);
-        if (booking == null) {
-            String msg = "Error: Booking id not found: " + id;
-            System.out.println(msg);
-            ErrorMessageStore.put(ErrorMessageConstants.BOOKING_ID_NOT_FOUND, msg);
-        } else {
-            System.out.printf("Booking id: %s\nSelected seats:\n%s", id, hall.displaySeatingMap(id));
+        while (true) {
+            System.out.println("Enter booking id, or blank to go back:");
+            System.out.print("> ");
+            String id = scanner.nextLine().trim();
+            if (id.isEmpty()) return;
+            Booking booking = hall.getBooking(id);
+            if (booking == null) {
+                String msg = "Error: Booking id not found: " + id;
+                System.out.println(msg);
+                ErrorMessageStore.put(ErrorMessageConstants.BOOKING_ID_NOT_FOUND, msg);
+            } else {
+                System.out.printf("Booking id: %s\nSelected seats:\n%s", id, hall.displaySeatingMap(id));
+            }
         }
     }
 

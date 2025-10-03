@@ -478,7 +478,7 @@ class CinemaHallTest {
     @Test
     void testHandleCheckBookingsInvalidId() {
         //        ErrorMessageStore.clear();
-        String simulatedInput = "TestMovie 10 10\n1\n1\n1\n\n2\nGIC0000\n3\n";
+        String simulatedInput = "TestMovie 10 10\n1\n1\n\n2\nGIC0000\n\n3\n";
         InputStream originalIn = new ByteArrayInputStream(simulatedInput.getBytes());
         OutputStream originalOut = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(originalOut);

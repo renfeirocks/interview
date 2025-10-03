@@ -8,5 +8,5 @@ public class CinemaHallConfig {
     public static final String GIC_BOOKING_ID = "GIC%04d";
     public static final String SCREEN = "S C R E E N";
     public static final char SEAT_AVAILABLE = 'O';
-    public static final char SEAT_RESERVED = 'X';
+    public static final char SEAT_RESERVED = '#';
 }
