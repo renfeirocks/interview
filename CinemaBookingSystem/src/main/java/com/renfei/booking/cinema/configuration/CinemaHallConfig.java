@@ -7,4 +7,6 @@ public class CinemaHallConfig {
     public static final int MIN_SEATS_PER_ROW = 1;
     public static final String GIC_BOOKING_ID = "GIC%04d";
     public static final String SCREEN = "S C R E E N";
+    public static final char SEAT_AVAILABLE = 'O';
+    public static final char SEAT_RESERVED = 'X';
 }

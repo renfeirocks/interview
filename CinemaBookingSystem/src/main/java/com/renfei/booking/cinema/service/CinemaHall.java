@@ -9,6 +9,8 @@ import com.renfei.booking.cinema.strategy.impl.GICCustomSeatingStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultPriorityStrategy;
 import com.renfei.booking.cinema.strategy.impl.GICDefaultSeatingStrategy;
 import com.renfei.booking.cinema.utility.SeatUtil;
+import com.renfei.booking.cinema.service.SeatSelectionService;
+import com.renfei.booking.cinema.utility.CinemaHallViewHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +36,7 @@ public class CinemaHall {
     private final AtomicInteger bookingCounter = new AtomicInteger(0);
     private final DefaultPriorityStrategy defaultPriorityStrategy = new GICDefaultPriorityStrategy();
     private final int[] defaultColPriority;
+    private final SeatSelectionService seatSelectionService = new SeatSelectionService();
 
     public CinemaHall(String movieTitle, int rows, int seatsPerRow) {
         int maxRows = CinemaHallConfig.MAX_ROWS;
@@ -81,9 +84,8 @@ public class CinemaHall {
                 return null;
             }
             List<int[]> selectedSeats =
-                    new GICDefaultSeatingStrategy()
-                            .selectSeats(
-                                    seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority, null);
+                    seatSelectionService.selectDefaultSeats(
+                        seatingMap, totalRows, seatsPerRow, numTickets, defaultColPriority);
 
             if (selectedSeats.size() == numTickets) {
                 return finalizeBooking(null, numTickets, selectedSeats);
@@ -117,14 +119,13 @@ public class CinemaHall {
             }
 
             List<int[]> selectedSeats =
-                    new GICCustomSeatingStrategy()
-                            .selectSeats(
-                                    seatingMap,
-                                    totalRows,
-                                    seatsPerRow,
-                                    numTickets,
-                                    defaultColPriority,
-                                    startPosition);
+                    seatSelectionService.selectCustomSeats(
+                        seatingMap,
+                        totalRows,
+                        seatsPerRow,
+                        numTickets,
+                        defaultColPriority,
+                        startPosition);
 
             if (selectedSeats.size() == numTickets) {
                 return finalizeBooking(booking.getBookingId(), numTickets, selectedSeats);
@@ -138,6 +139,10 @@ public class CinemaHall {
         } finally {
             bookingLock.unlock();
         }
+    }
+
+    public String displaySeatingMap(String currentBookingId) {
+        return CinemaHallViewHelper.displaySeatingMap(seatingMap, totalRows, seatsPerRow, bookings, currentBookingId);
     }
 
     private Booking finalizeBooking(String bookingId, int numTickets, List<int[]> selectedSeats) {
@@ -155,61 +160,6 @@ public class CinemaHall {
 
     public Booking getBooking(String bookingId) {
         return bookings.get(bookingId);
-    }
-
-    public String displaySeatingMap(String currentBookingId) {
-        StringBuilder sb = new StringBuilder();
-        int seatSymbolWidth = 3; // " %2s"
-        int totalWidth = seatsPerRow * seatSymbolWidth;
-        String screenLabel = SCREEN;
-        // Center the screen label above the seats
-        int screenLabelPadding = Math.max(0, (totalWidth - screenLabel.length()) / 2);
-        sb.append("  ").append(" ".repeat(screenLabelPadding)).append(screenLabel).append("\n");
-        // Separator line aligned with seat numbers
-        sb.append("    ").append("-".repeat(totalWidth - 2)).append("\n");
-        Map<String, List<int[]>> allBookedSeats = new HashMap<>();
-        bookings.forEach((id, booking) -> allBookedSeats.put(id, booking.getSelectedSeats()));
-        for (int r = totalRows - 1; r >= 0; r--) {
-            sb.append(SeatUtil.rowIndexToLabel(r)).append(" ");
-            for (int c = 0; c < seatsPerRow; c++) {
-                char symbol = '.';
-                boolean isBooked = false;
-                String seatBookingId = null;
-                if (seatingMap[r][c] == 1) {
-                    isBooked = true;
-                    for (Map.Entry<String, List<int[]>> entry : allBookedSeats.entrySet()) {
-                        for (int[] seat : entry.getValue()) {
-                            if (seat[0] == r && seat[1] == c) {
-                                seatBookingId = entry.getKey();
-                                break;
-                            }
-                        }
-                        if (seatBookingId != null) break;
-                    }
-                }
-                if (isBooked) {
-                    if (currentBookingId != null && currentBookingId.equals(seatBookingId)) {
-                        symbol = 'O';
-                    } else {
-                        symbol = '#';
-                    }
-                }
-                sb.append(String.format(" %2s", symbol));
-            }
-            sb.append("\n");
-        }
-        sb.append("  ");
-        for (int c = 1; c <= seatsPerRow; c++) {
-            if (c > 9) {
-                sb.append(String.format(" %2d", c));
-            } else if (c == 9) {
-                sb.append(String.format(" %2d ", c));
-            } else {
-                sb.append(String.format(" %2d", c));
-            }
-        }
-        sb.append("\n");
-        return sb.toString();
     }
 
     public Booking reallocateSeats(Booking booking, int tickets, String newPos) {
