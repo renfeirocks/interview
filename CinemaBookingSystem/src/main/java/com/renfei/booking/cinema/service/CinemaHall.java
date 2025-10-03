@@ -1,8 +1,5 @@
 package com.renfei.booking.cinema.service;
 
-import static com.renfei.booking.cinema.configuration.CinemaHallConfig.GIC_BOOKING_ID;
-import static com.renfei.booking.cinema.configuration.CinemaHallConfig.SCREEN;
-
 import com.renfei.booking.cinema.configuration.CinemaHallConfig;
 import com.renfei.booking.cinema.exception.ErrorMessageConstants;
 import com.renfei.booking.cinema.exception.ErrorMessageStore;
@@ -19,6 +16,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
+
+import static com.renfei.booking.cinema.configuration.CinemaHallConfig.GIC_BOOKING_ID;
+import static com.renfei.booking.cinema.configuration.CinemaHallConfig.SCREEN;
 
 /**
  * Manages the state and booking logic of the cinema Thread-safe operations are ensured using
@@ -87,10 +87,13 @@ public class CinemaHall {
 
             if (selectedSeats.size() == numTickets) {
                 return finalizeBooking(null, numTickets, selectedSeats);
+            } else {
+                ErrorMessageStore.put(
+                        ErrorMessageConstants.SEAT_SELECTION_FAILED,
+                        "Could not find suitable seats for the requested number of tickets.");
+                return null;
             }
-            ErrorMessageStore.put(
-                    ErrorMessageConstants.SEAT_SELECTION_FAILED, "Could not find enough contiguous seats.");
-            return null;
+
         } finally {
             bookingLock.unlock();
         }
@@ -125,11 +128,13 @@ public class CinemaHall {
 
             if (selectedSeats.size() == numTickets) {
                 return finalizeBooking(booking.getBookingId(), numTickets, selectedSeats);
+            } else {
+                ErrorMessageStore.put(
+                        ErrorMessageConstants.SEAT_SELECTION_FAILED,
+                        "Could not find suitable seats for the requested number of tickets.");
+                return null;
             }
-            ErrorMessageStore.put(
-                    ErrorMessageConstants.CUSTOM_SEAT_SELECTION_FAILED,
-                    "Could not find enough contiguous seats (custom).");
-            return null; // Failed to find contiguous seats/overflow
+
         } finally {
             bookingLock.unlock();
         }
@@ -197,12 +202,10 @@ public class CinemaHall {
         for (int c = 1; c <= seatsPerRow; c++) {
             if (c > 9) {
                 sb.append(String.format(" %2d", c));
-                System.out.println(String.format("%3d", c));
             } else if (c == 9) {
                 sb.append(String.format(" %2d ", c));
             } else {
                 sb.append(String.format(" %2d", c));
-                System.out.println(String.format(" %2d", c));
             }
         }
         sb.append("\n");

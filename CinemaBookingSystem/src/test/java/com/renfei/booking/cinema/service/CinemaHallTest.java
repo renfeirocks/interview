@@ -164,6 +164,18 @@ class CinemaHallTest {
     assertArrayEquals(new int[] {1, 9}, seats.get(7));
   }
 
+    @Test
+    void reallocateSeats_SuccessfulReallocation() {
+        Booking booking = cinemaHall.bookDefault(1);
+        Booking reallocatedBooking = cinemaHall.reallocateSeats(booking, 1, "C5");
+        List<int[]> selectedSeats = reallocatedBooking.getSelectedSeats();
+        System.out.println(cinemaHall.displaySeatingMap(reallocatedBooking.getBookingId()));
+
+        assertEquals(2, selectedSeats.get(0)[0]); // Row C is index 2
+        assertEquals(4, selectedSeats.get(0)[1]); // Seat 5 is index 4
+
+    }
+
   @Test
   void testDefaultPriorityStrategy() {
     CinemaHall hall = new CinemaHall("Movie", 3, 5);
